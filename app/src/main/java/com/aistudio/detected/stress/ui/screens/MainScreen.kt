@@ -132,10 +132,12 @@ fun MainScreen(onNavigateStats: () -> Unit, onNavigateAdmin: () -> Unit = {}, vi
                                     viewModel.processIntent(StressIntent.UpdateInput(text))
                                     viewModel.processIntent(StressIntent.SubmitAnalysis)
                                 })
+                                Spacer(modifier = Modifier.height(16.dp))
                             }
                             if (state.isLoading) {
                                 item {
                                     TypingIndicatorBubble()
+                                    Spacer(modifier = Modifier.height(16.dp))
                                 }
                             }
                         }
@@ -217,7 +219,10 @@ fun ChatBubble(message: ChatMessage, onQuickReply: (String) -> Unit) {
     val isUser = message.sender == "user"
     val parts = message.content.split("|||")
     val text = parts[0]
-    val keywords = if (parts.size > 1) parts[1].split(",") else emptyList()
+    val category = if (parts.size > 1) parts[1] else "joy"
+    val keywords = if (parts.size > 2 && parts[2].isNotBlank()) parts[2].split(",") else emptyList()
+    // Backward compatibility for old messages that only had text and keywords
+    val actualKeywords = if (parts.size == 2) parts[1].split(",") else keywords
     
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -249,14 +254,20 @@ fun ChatBubble(message: ChatMessage, onQuickReply: (String) -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.padding(start = 8.dp)
             ) {
-                val q1 = if (text.contains("خواب")) "چند ساعت بخوابم؟" else "بیشتر توضیح بده"
-                val q2 = if (text.contains("خشم")) "چطور آروم شم؟" else "الان حالم بهتره"
+                val (q1, q2) = when (category) {
+                    "sleep" -> Pair("چند ساعت بخوابم؟", "راهکار بی‌خوابی")
+                    "anger" -> Pair("چطور آروم شم؟", "نفس عمیق")
+                    "anxiety" -> Pair("خیلی استرس دارم", "چیکار کنم؟")
+                    "depression" -> Pair("احساس تنهایی می‌کنم", "بیشتر حرف بزنیم")
+                    "burnout" -> Pair("خیلی خسته‌ام", "نیاز به استراحت دارم")
+                    else -> Pair("بیشتر توضیح بده", "الان حالم بهتره")
+                }
                 QuickReplyChip(q1, onQuickReply)
                 QuickReplyChip(q2, onQuickReply)
             }
         }
         
-        if (!isUser && keywords.isNotEmpty()) {
+        if (!isUser && actualKeywords.isNotEmpty()) {
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = "پیشنهاد برای شما:",
@@ -265,7 +276,7 @@ fun ChatBubble(message: ChatMessage, onQuickReply: (String) -> Unit) {
                 modifier = Modifier.padding(start = 8.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
-            VideoSuggestionsCarousel(queries = keywords)
+            VideoSuggestionsCarousel(queries = actualKeywords)
         }
     }
 }

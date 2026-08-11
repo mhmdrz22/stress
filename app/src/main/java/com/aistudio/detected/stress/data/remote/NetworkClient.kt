@@ -14,7 +14,6 @@ import android.util.Log
 
 object NetworkClient {
     private const val API_URL = "https://ais-dev-t2u3h65li4eix7p7qd6qnm-522132295476.europe-west1.run.app/api/v1/analyze-chat"
-    private const val FALLBACK_URL = "http://10.0.2.2:8000/api/v1/analyze-chat"
     private const val MAX_RETRIES = 3
 
     suspend fun analyzeChat(deviceId: String, history: List<ChatMessage>, currentMessage: String): JSONObject? = withContext(Dispatchers.IO) {
@@ -32,15 +31,6 @@ object NetworkClient {
                     delay(currentDelay)
                     currentDelay *= 2
                 }
-            }
-        }
-        
-        if (result == null) {
-            try {
-                Log.d("NetworkClient", "Trying fallback URL")
-                result = makeRequest(FALLBACK_URL, deviceId, history, currentMessage)
-            } catch (fallbackEx: Exception) {
-                Log.e("NetworkClient", "Fallback failed: ${fallbackEx.message}")
             }
         }
         

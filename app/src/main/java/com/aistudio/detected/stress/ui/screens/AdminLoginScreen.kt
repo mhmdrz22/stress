@@ -12,6 +12,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aistudio.detected.stress.ui.theme.ArameshTheme
+import java.security.MessageDigest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,7 +58,10 @@ fun AdminLoginScreen(onLoginSuccess: () -> Unit, onBack: () -> Unit) {
             Spacer(modifier = Modifier.height(32.dp))
             Button(
                 onClick = {
-                    if (password == "admin123") {
+                    val digest = MessageDigest.getInstance("SHA-256")
+                    val hash = digest.digest(password.toByteArray()).joinToString("") { "%02x".format(it) }
+                    // Hash for "admin123" is 8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918
+                    if (hash == "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918") {
                         onLoginSuccess()
                     } else {
                         error = true

@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.aistudio.detected.stress.data.local.MoodEntry
+import com.aistudio.detected.stress.data.local.ChatMessage
 import com.aistudio.detected.stress.ui.theme.ArameshTheme
 import com.aistudio.detected.stress.viewmodel.StressViewModel
 import java.text.SimpleDateFormat
@@ -39,13 +40,14 @@ import java.util.Locale
 @Composable
 fun StatsScreen(onBack: () -> Unit, viewModel: StressViewModel = viewModel()) {
     val history by viewModel.moodHistory.collectAsState()
+    val allMessages by viewModel.allChatMessages.collectAsState()
     
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Scaffold(
             containerColor = ArameshTheme.colors.background,
             topBar = {
                 CenterAlignedTopAppBar(
-                    title = { Text("نمودار آرامش", style = ArameshTheme.typography.title, color = ArameshTheme.colors.accentWood) },
+                    title = { Text("نمودار آرامش و تاریخچه", style = ArameshTheme.typography.title, color = ArameshTheme.colors.accentWood) },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "بازگشت", tint = ArameshTheme.colors.accentWood)
@@ -85,7 +87,7 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StressViewModel = viewModel()) {
                 Spacer(modifier = Modifier.height(32.dp))
                 
                 Text(
-                    text = "تاریخچه بررسی‌ها",
+                    text = "تاریخچه بررسی‌ها (احساسات)",
                     style = ArameshTheme.typography.title.copy(fontSize = 18.sp),
                     color = ArameshTheme.colors.primaryText,
                     modifier = Modifier.padding(bottom = 16.dp)
@@ -95,8 +97,66 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StressViewModel = viewModel()) {
                     HistoryItem(entry)
                     Spacer(modifier = Modifier.height(12.dp))
                 }
+                
+                if (allMessages.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        text = "تاریخچه گفتگوها",
+                        style = ArameshTheme.typography.title.copy(fontSize = 18.sp),
+                        color = ArameshTheme.colors.primaryText,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                    
+                    allMessages.forEach { msg ->
+                        ChatMessageItem(msg)
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                }
+                
                 Spacer(modifier = Modifier.height(32.dp))
             }
+        }
+    }
+}
+
+@Composable
+fun ChatMessageItem(msg: ChatMessage) {
+    val isUser = msg.sender == "user"
+    val text = msg.content.split("|||")[0]
+    val formatter = SimpleDateFormat("dd MMM, HH:mm", Locale("fa", "IR"))
+    val dateStr = formatter.format(Date(msg.timestamp))
+    
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (isUser) ArameshTheme.colors.surfaceGlass else Color.White)
+            .padding(12.dp)
+    ) {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = if (isUser) "شما" else "آرامش‌یار",
+                    style = ArameshTheme.typography.label,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isUser) ArameshTheme.colors.accentWood else ArameshTheme.colors.primaryText
+                )
+                Text(
+                    text = dateStr,
+                    style = ArameshTheme.typography.label.copy(fontSize = 10.sp),
+                    color = ArameshTheme.colors.secondaryText
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = text,
+                style = ArameshTheme.typography.body,
+                color = ArameshTheme.colors.primaryText,
+                fontSize = 14.sp
+            )
         }
     }
 }

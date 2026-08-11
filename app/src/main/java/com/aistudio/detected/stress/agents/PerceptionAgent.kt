@@ -5,28 +5,45 @@ object PerceptionAgent {
      * Agent 1: Perception & Intent Analyzer (تحلیلگر عمیق هیجان)
      */
     fun analyze(text: String): PerceptionResult {
-        val negativeWords = listOf("نگران", "خسته", "عصبی", "بد", "مشکل", "خواب", "استرس", "ناامید", "خالی", "درد")
-        val urgentWords = listOf("خودکشی", "مردن", "خسته شدم از زندگی", "تمومش کنم", "هیچکس", "کشتن", "ببرم")
+        val negativeWords = listOf("نگران", "خسته", "عصب", "بد", "مشکل", "خواب", "استرس", "ناامید", "خالی", "درد", "غمگین", "افسرد")
+        val urgentWords = listOf("خودکشی", "مردن", "خسته شدم", "تمومش کنم", "هیچکس", "کشتن", "ببرم")
         
         var score = 0
         var urgencyScore = 0
         
-        val words = text.split(" ")
-        for (word in words) {
-            if (negativeWords.any { word.contains(it) }) score++
-            if (urgentWords.any { word.contains(it) }) urgencyScore++
+        // Simple Stemmer for Persian
+        fun stem(word: String): String {
+            var w = word.replace("\u200c", "") // remove ZWNJ
+            val suffixes = listOf("ها", "های", "هایی", "ان", "ات", "ین", "یم", "ید", "ند", "م", "ت", "ش", "ی", "گی")
+            for (suffix in suffixes) {
+                if (w.endsWith(suffix) && w.length > suffix.length + 2) {
+                    w = w.removeSuffix(suffix)
+                    break
+                }
+            }
+            return w
+        }
+        
+        val words = text.split(Regex("\\s+"))
+        for (w in words) {
+            val stemmed = stem(w)
+            if (negativeWords.any { stemmed.contains(it) }) score += 2
+        }
+        
+        for (urgent in urgentWords) {
+            if (text.contains(urgent)) urgencyScore += 5
         }
         
         val hasStress = score > 0 || urgencyScore > 0
-        val severity = minOf((score * 20) + (urgencyScore * 50), 100)
+        val severity = minOf((score * 15) + (urgencyScore * 50), 100)
         
         val isCrisis = urgencyScore > 0 || severity > 80
         
         val category = when {
             text.contains("عصب") || text.contains("خشم") -> "anger"
             text.contains("خواب") || text.contains("بیدار") -> "sleep"
-            text.contains("خسته") || text.contains("فرسوده") || text.contains("بریدم") -> "burnout"
-            text.contains("غمگین") || text.contains("افسرده") || text.contains("ناامید") -> "depression"
+            text.contains("خسته") || text.contains("فرسوده") || text.contains("برید") -> "burnout"
+            text.contains("غم") || text.contains("افسرد") || text.contains("ناامید") -> "depression"
             hasStress -> "anxiety"
             else -> "joy"
         }

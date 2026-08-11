@@ -30,7 +30,6 @@ data class GeminiResponse(
 )
 
 class StressViewModel(application: Application) : AndroidViewModel(application) {
-
     private val _state = MutableStateFlow(StressState(sessionId = System.currentTimeMillis()))
     val state: StateFlow<StressState> = _state.asStateFlow()
     
@@ -38,12 +37,15 @@ class StressViewModel(application: Application) : AndroidViewModel(application) 
     private val moodDao = database.moodDao()
     private val adviceFeedbackDao = database.adviceFeedbackDao()
     private val chatDao = database.chatDao()
-
+    
     private var deviceId: String = UUID.randomUUID().toString()
-
+    
     val moodHistory: StateFlow<List<MoodEntry>> = moodDao.getRecentMoods()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
+        
+    val allChatMessages: StateFlow<List<ChatMessage>> = chatDao.getAllMessagesFlow()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        
     val likedAdviceTitles: StateFlow<List<String>> = adviceFeedbackDao.getLikedAdviceTitles()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -147,15 +149,14 @@ class StressViewModel(application: Application) : AndroidViewModel(application) 
                     search_keywords = orchestratorResult.searchKeywords
                 )
                 
-                // Add agent message to DB
-                // Encode keywords as well to display suggestions
-                val contentWithKeywords = orchestratorResult.empathyMessage + if(orchestratorResult.searchKeywords.isNotEmpty()) "|||" + orchestratorResult.searchKeywords.joinToString(",") else ""
+                // Encode category and keywords
+                val keywordStr = if(orchestratorResult.searchKeywords.isNotEmpty()) orchestratorResult.searchKeywords.joinToString(",") else ""
+                val contentWithKeywords = "${orchestratorResult.empathyMessage}|||${orchestratorResult.category}|||$keywordStr"
                 
                 withContext(Dispatchers.IO) {
                     chatDao.insertMessage(ChatMessage(sessionId = sessionId, sender = "agent", content = contentWithKeywords))
                 }
 
-                // Save to database (respecting history for future algorithms)
                 val insertedId = withContext(Dispatchers.IO) {
                     moodDao.insertMood(MoodEntry(
                         dateMillis = System.currentTimeMillis(),
