@@ -46,6 +46,14 @@ object CriticAgent {
     }
 }
 
+data class PerceptionResult(
+    val hasStress: Boolean,
+    val severity: Int,
+    val category: String,
+    val confidence: Float,
+    val isCrisis: Boolean
+)
+
 data class CriticResult(
     val hasStress: Boolean,
     val category: String,

@@ -1,2 +1,0 @@
-sed -i 's/fun getAdviceForCategory(category: String): List<AdviceItem> {/fun getAdviceForCategory(category: String, likedTitles: List<String> = emptyList()): List<AdviceItem> {/' app/src/main/java/com/aistudio/detected/stress/data/LocalAdviceGraph.kt
-sed -i 's/return if (matches.isNotEmpty()) matches.shuffled().take(4)/return if (matches.isNotEmpty()) matches.sortedByDescending { likedTitles.contains(it.title) }.take(4)/' app/src/main/java/com/aistudio/detected/stress/data/LocalAdviceGraph.kt

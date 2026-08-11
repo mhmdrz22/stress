@@ -1,66 +1,91 @@
-from fastapi import APIRouter, HTTPException, Body
-from pydantic import BaseModel, Field
-import httpx
 import os
 import json
-import asyncio
-from typing import List
 import re
+import httpx
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from typing import List
 
-router = APIRouter(tags=["Stress Analysis"])
+router = APIRouter()
 
-class ChatMessageSchema(BaseModel):
+class ChatMessage(BaseModel):
     role: str
     text: str
 
-class MultiTurnAnalyzeRequest(BaseModel):
+class Request(BaseModel):
     device_id: str
-    history: List[ChatMessageSchema]
+    history: List[ChatMessage]
     current_message: str
 
-class AnalyzeResponse(BaseModel):
+class Response(BaseModel):
     has_stress: bool
     category_tag: str
     empathy_message: str
     search_keywords: List[str]
 
-HF_TOKEN = os.getenv("HF_TOKEN", "")
+SYSTEM_PROMPT = """You are ArameshYar (آرامشیار), a professional Persian mental health AI.
+Analyze user input + history. Detect language (fa/en/mixed). Respond in user's language.
+Categories: anxiety, depression, anger, sleep, burnout, exam_stress, joy.
+ALWAYS end with an open-ended question.
+JSON only:
+{"has_stress": bool, "category_tag": str, "empathy_message": str, "search_keywords": [str]}"""
 
-SYSTEM_PROMPT = """You are an Empathetic Persian AI Assistant named "ArameshYar" (آرامش‌یار) specializing in mental health support.
-Your task is to analyze the user's input along with the chat history.
-Be warm, validate their emotions, and ALWAYS end your `empathy_message` with an open-ended question to encourage them to keep talking.
-Never sound clinical.
-Respond ONLY in valid JSON format matching this schema:
-{
-  "has_stress": bool,
-  "category_tag": "anxiety" | "depression" | "anger" | "sleep" | "burnout" | "joy",
-  "empathy_message": "string (Persian empathic response)",
-  "search_keywords": ["keyword1", "keyword2"]
-}"""
+async def call_ollama(messages: list) -> dict:
+    """Local Ollama - FREE, no internet needed on server"""
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            prompt = f"{SYSTEM_PROMPT}\n\nConversation:\n"
+            for m in messages:
+                prompt += f"{'User' if m['role']=='user' else 'AI'}: {m['content']}\n"
+            prompt += "AI (JSON):"
+            
+            r = await client.post("http://localhost:11434/api/generate", json={
+                "model": "qwen2.5:7b",
+                "prompt": prompt,
+                "stream": False,
+                "format": "json"
+            })
+            if r.status_code == 200:
+                content = r.json()["response"]
+                return json.loads(content)
+    except Exception as e:
+        print(f"Ollama error: {e}")
+    return None
 
-@router.post("/analyze-chat", response_model=AnalyzeResponse)
-async def analyze_chat(request: MultiTurnAnalyzeRequest = Body(...)):
-    if not request.current_message.strip():
-        raise HTTPException(status_code=400, detail="Text cannot be empty")
-        
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-    for msg in request.history:
-        role = "assistant" if msg.role in ["agent", "model"] else "user"
-        messages.append({"role": role, "content": msg.text})
-    
-    messages.append({"role": "user", "content": request.current_message})
-        
+async def call_deepseek(messages: list) -> dict:
+    """DeepSeek API - Cheap, good Persian"""
+    api_key = os.getenv("DEEPSEEK_API_KEY")
+    if not api_key:
+        return None
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
-            headers = {
-                "Authorization": f"Bearer {HF_TOKEN}",
-                "Content-Type": "application/json"
-            }
-            # Using Qwen2.5-7B-Instruct since it is highly performant for Persian logic, but increased timeout to 30s.
-            # If rate limited, a smaller model could be used: Qwen/Qwen2.5-7B-Instruct
-            response = await client.post(
+            r = await client.post(
+                "https://api.deepseek.com/chat/completions",
+                headers={"Authorization": f"Bearer {api_key}"},
+                json={
+                    "model": "deepseek-chat",
+                    "messages": messages,
+                    "temperature": 0.3,
+                    "max_tokens": 800,
+                    "response_format": {"type": "json_object"}
+                }
+            )
+            if r.status_code == 200:
+                content = r.json()["choices"][0]["message"]["content"]
+                match = re.search(r'\{.*\}', content, re.DOTALL)
+                return json.loads(match.group(0)) if match else json.loads(content)
+    except Exception as e:
+        print(f"DeepSeek error: {e}")
+    return None
+
+async def call_huggingface(messages: list) -> dict:
+    """HuggingFace - Free tier but rate limited"""
+    hf_token = os.getenv("HF_TOKEN", "")
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            r = await client.post(
                 "https://api-inference.huggingface.co/models/Qwen/Qwen2.5-7B-Instruct/v1/chat/completions",
-                headers=headers,
+                headers={"Authorization": f"Bearer {hf_token}"},
                 json={
                     "model": "Qwen/Qwen2.5-7B-Instruct",
                     "messages": messages,
@@ -69,27 +94,29 @@ async def analyze_chat(request: MultiTurnAnalyzeRequest = Body(...)):
                     "response_format": {"type": "json_object"}
                 }
             )
-            
-            if response.status_code != 200:
-                raise HTTPException(status_code=response.status_code, detail=f"Hugging Face API Error: {response.text}")
-                
-            data = response.json()
-            content = data["choices"][0]["message"]["content"]
-            
-            # Robust JSON extraction
-            match = re.search(r'\{.*\}', content, re.DOTALL)
-            if match:
-                content = match.group(0)
-            
-            try:
-                parsed = json.loads(content)
-                return AnalyzeResponse(**parsed)
-            except (json.JSONDecodeError, TypeError, ValueError) as e:
-                raise HTTPException(status_code=500, detail="Invalid JSON format from AI model")
-                
-    except httpx.TimeoutException:
-        raise HTTPException(status_code=504, detail="Gateway Timeout - The upstream AI provider did not respond in time.")
-    except httpx.RequestError as exc:
-        raise HTTPException(status_code=502, detail="An error occurred while requesting upstream API.")
+            if r.status_code == 200:
+                content = r.json()["choices"][0]["message"]["content"]
+                match = re.search(r'\{.*\}', content, re.DOTALL)
+                return json.loads(match.group(0)) if match else json.loads(content)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"HF error: {e}")
+    return None
+
+@router.post("/analyze-chat", response_model=Response)
+async def analyze_chat(req: Request):
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    for msg in req.history:
+        messages.append({"role": "user" if msg.role=="user" else "assistant", "content": msg.text})
+    messages.append({"role": "user", "content": req.current_message})
+    
+    # Try providers in order: Ollama (free/local) → DeepSeek (cheap) → HuggingFace (free/rate-limited)
+    result = await call_ollama(messages)
+    if not result:
+        result = await call_deepseek(messages)
+    if not result:
+        result = await call_huggingface(messages)
+    
+    if not result:
+        raise HTTPException(status_code=503, detail="All AI providers unavailable")
+    
+    return Response(**result)

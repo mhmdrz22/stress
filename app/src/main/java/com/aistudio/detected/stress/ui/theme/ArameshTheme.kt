@@ -8,11 +8,9 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import com.aistudio.detected.stress.R
 
 @Immutable
 data class ArameshColors(
@@ -25,10 +23,7 @@ data class ArameshColors(
     val borderLight: Color = Color(0x33FFFFFF)
 )
 
-val PremiumFontFamily = FontFamily(
-    Font(R.font.vazirmatn_regular, FontWeight.Normal),
-    Font(R.font.vazirmatn_bold, FontWeight.Bold)
-)
+val PremiumFontFamily = FontFamily.Default
 
 @Immutable
 data class ArameshTypography(
