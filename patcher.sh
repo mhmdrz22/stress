@@ -1,0 +1,2 @@
+sed -i 's/modifier: Modifier = Modifier/modifier: Modifier = Modifier,\n    isMicLoading: Boolean = false/g' app/src/main/java/com/aistudio/detected/stress/ui/components/GlassmorphismInputCard.kt
+sed -i 's/import androidx.compose.material3.Text/import androidx.compose.material3.Text\nimport androidx.compose.material3.CircularProgressIndicator/g' app/src/main/java/com/aistudio/detected/stress/ui/components/GlassmorphismInputCard.kt

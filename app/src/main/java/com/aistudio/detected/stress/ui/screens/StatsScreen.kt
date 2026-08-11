@@ -1,0 +1,205 @@
+package com.aistudio.detected.stress.ui.screens
+
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.aistudio.detected.stress.data.local.MoodEntry
+import com.aistudio.detected.stress.ui.theme.ArameshTheme
+import com.aistudio.detected.stress.viewmodel.StressViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun StatsScreen(onBack: () -> Unit, viewModel: StressViewModel = viewModel()) {
+    val history by viewModel.moodHistory.collectAsState()
+    
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        Scaffold(
+            containerColor = ArameshTheme.colors.background,
+            topBar = {
+                CenterAlignedTopAppBar(
+                    title = { Text("نمودار آرامش", style = ArameshTheme.typography.title, color = ArameshTheme.colors.accentWood) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "بازگشت", tint = ArameshTheme.colors.accentWood)
+                        }
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.Transparent)
+                )
+            }
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp)
+            ) {
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    text = "وضعیت شما در روزهای اخیر",
+                    style = ArameshTheme.typography.title.copy(fontSize = 18.sp),
+                    color = ArameshTheme.colors.primaryText,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                if (history.isEmpty()) {
+                    Text(
+                        text = "هنوز اطلاعات کافی برای رسم نمودار وجود ندارد.",
+                        color = ArameshTheme.colors.secondaryText,
+                        style = ArameshTheme.typography.body,
+                        modifier = Modifier.padding(32.dp)
+                    )
+                } else {
+                    MoodChartCard(history.reversed())
+                }
+                
+                Spacer(modifier = Modifier.height(32.dp))
+                
+                Text(
+                    text = "تاریخچه بررسی‌ها",
+                    style = ArameshTheme.typography.title.copy(fontSize = 18.sp),
+                    color = ArameshTheme.colors.primaryText,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                history.forEach { entry ->
+                    HistoryItem(entry)
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+                Spacer(modifier = Modifier.height(32.dp))
+            }
+        }
+    }
+}
+
+@Composable
+fun MoodChartCard(data: List<MoodEntry>) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(250.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(Color.White)
+            .padding(24.dp)
+    ) {
+        val primaryColor = ArameshTheme.colors.accentWood
+        val joyColor = ArameshTheme.colors.accentGreen
+        
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val width = size.width
+            val height = size.height
+            val pointWidth = if (data.size > 1) width / (data.size - 1) else width
+            
+            val path = Path()
+            
+            data.forEachIndexed { index, entry ->
+                // 0 = no stress (joy), 1 = stress
+                val yRatio = if (entry.hasStress) 0.8f else 0.2f
+                val x = index * pointWidth
+                val y = height * yRatio
+                
+                if (index == 0) {
+                    path.moveTo(x, y)
+                } else {
+                    val prevX = (index - 1) * pointWidth
+                    val prevY = height * (if (data[index - 1].hasStress) 0.8f else 0.2f)
+                    // Bezier curve
+                    path.cubicTo(
+                        prevX + pointWidth / 2, prevY,
+                        x - pointWidth / 2, y,
+                        x, y
+                    )
+                }
+                
+                // Draw dot
+                drawCircle(
+                    color = if (entry.hasStress) primaryColor else joyColor,
+                    radius = 6.dp.toPx(),
+                    center = Offset(x, y)
+                )
+            }
+            
+            drawPath(
+                path = path,
+                color = primaryColor.copy(alpha = 0.5f),
+                style = Stroke(
+                    width = 4.dp.toPx(),
+                    cap = StrokeCap.Round,
+                    join = StrokeJoin.Round
+                )
+            )
+        }
+        
+        // Labels
+        Text("استرس/خستگی", modifier = Modifier.align(Alignment.BottomStart), style = ArameshTheme.typography.label, color = primaryColor)
+        Text("آرامش/شادی", modifier = Modifier.align(Alignment.TopStart), style = ArameshTheme.typography.label, color = joyColor)
+    }
+}
+
+@Composable
+fun HistoryItem(entry: MoodEntry) {
+    val formatter = SimpleDateFormat("dd MMM, HH:mm", Locale("fa", "IR"))
+    val dateStr = formatter.format(Date(entry.dateMillis))
+    
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.White)
+            .padding(16.dp)
+    ) {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = dateStr,
+                    style = ArameshTheme.typography.label,
+                    color = ArameshTheme.colors.secondaryText
+                )
+                Text(
+                    text = entry.categoryTag.uppercase(),
+                    style = ArameshTheme.typography.label,
+                    color = if (entry.hasStress) ArameshTheme.colors.accentWood else ArameshTheme.colors.accentGreen
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = entry.userInput,
+                style = ArameshTheme.typography.body,
+                color = ArameshTheme.colors.primaryText,
+                maxLines = 2
+            )
+        }
+    }
+}

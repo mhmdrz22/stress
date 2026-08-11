@@ -1,0 +1,8 @@
+{
+  "name": "آرامش‌یار",
+  "description": "اپلیکیشن اندروید برای تشخیص استرس و اضطراب با استفاده از هوش مصنوعی بر اساس متن، همراه با راهکارهای محلی و روانشناسی.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,2 @@
+sed -i 's/                decorationBox = { innerTextField ->/                decorationBox = { innerTextField ->\n                    Box(modifier = Modifier.fillMaxSize()) {/' app/src/main/java/com/aistudio/detected/stress/ui/components/GlassmorphismInputCard.kt
+sed -i 's/                    innerTextField()/                    innerTextField()\n                    }/' app/src/main/java/com/aistudio/detected/stress/ui/components/GlassmorphismInputCard.kt

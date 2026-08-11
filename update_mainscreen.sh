@@ -1,0 +1,2 @@
+sed -i 's/onClick = { isLiked = true }/onClick = { isLiked = true; viewModel.processIntent(StressIntent.ToggleLike(item.title, true)) }/' app/src/main/java/com/aistudio/detected/stress/ui/screens/MainScreen.kt
+sed -i 's/onClick = { isLiked = false }/onClick = { isLiked = false; viewModel.processIntent(StressIntent.ToggleLike(item.title, false)) }/' app/src/main/java/com/aistudio/detected/stress/ui/screens/MainScreen.kt
