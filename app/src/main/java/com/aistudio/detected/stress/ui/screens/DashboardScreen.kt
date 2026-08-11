@@ -31,14 +31,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.aistudio.detected.stress.data.local.MoodEntry
 import com.aistudio.detected.stress.data.local.ChatMessage
 import com.aistudio.detected.stress.ui.theme.ArameshTheme
-import com.aistudio.detected.stress.viewmodel.StressViewModel
+import com.aistudio.detected.stress.viewmodel.ChatViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StatsScreen(onBack: () -> Unit, viewModel: StressViewModel = viewModel()) {
+fun DashboardScreen(onBack: () -> Unit, viewModel: ChatViewModel = viewModel()) {
     val history by viewModel.moodHistory.collectAsState()
     val allMessages by viewModel.allChatMessages.collectAsState()
     

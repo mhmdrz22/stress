@@ -2,7 +2,7 @@ package com.aistudio.detected.stress.agents
 
 import com.aistudio.detected.stress.data.AdviceItem
 import com.aistudio.detected.stress.data.local.ChatMessage
-import com.aistudio.detected.stress.data.remote.NetworkClient
+import com.aistudio.detected.stress.data.remote.BackendApiClient
 
 object Orchestrator {
     
@@ -27,7 +27,7 @@ object Orchestrator {
         
         // 2. Online Inference (FastAPI -> Hugging Face)
         try {
-            val response = NetworkClient.analyzeChat(deviceId, history, text)
+            val response = BackendApiClient.analyzeChat(deviceId, history, text)
             if (response != null) {
                 val hasStress = response.optBoolean("has_stress", false)
                 val category = response.optString("category_tag", "general")

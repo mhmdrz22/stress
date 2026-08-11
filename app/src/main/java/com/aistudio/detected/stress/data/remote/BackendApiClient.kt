@@ -12,7 +12,7 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import android.util.Log
 
-object NetworkClient {
+object BackendApiClient {
     private const val API_URL = "https://ais-dev-t2u3h65li4eix7p7qd6qnm-522132295476.europe-west1.run.app/api/v1/analyze-chat"
     private const val MAX_RETRIES = 3
 
@@ -25,7 +25,7 @@ object NetworkClient {
             try {
                 result = makeRequest(API_URL, deviceId, history, currentMessage)
             } catch (e: Exception) {
-                Log.e("NetworkClient", "Attempt ${attempt + 1} failed: ${e.message}")
+                Log.e("BackendApiClient", "Attempt ${attempt + 1} failed: ${e.message}")
                 attempt++
                 if (attempt < MAX_RETRIES) {
                     delay(currentDelay)

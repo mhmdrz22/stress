@@ -29,9 +29,9 @@ data class GeminiResponse(
     val search_keywords: List<String>
 )
 
-class StressViewModel(application: Application) : AndroidViewModel(application) {
-    private val _state = MutableStateFlow(StressState(sessionId = System.currentTimeMillis()))
-    val state: StateFlow<StressState> = _state.asStateFlow()
+class ChatViewModel(application: Application) : AndroidViewModel(application) {
+    private val _state = MutableStateFlow(ChatState(sessionId = System.currentTimeMillis()))
+    val state: StateFlow<ChatState> = _state.asStateFlow()
     
     private val database = AppDatabase.getDatabase(application)
     private val moodDao = database.moodDao()
@@ -61,15 +61,15 @@ class StressViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun processIntent(intent: StressIntent) {
+    fun processIntent(intent: ChatIntent) {
         when (intent) {
-            is StressIntent.UpdateInput -> {
+            is ChatIntent.UpdateInput -> {
                 _state.update { it.copy(inputText = intent.text, error = null) }
             }
-            is StressIntent.SubmitAnalysis -> {
+            is ChatIntent.SubmitAnalysis -> {
                 analyzeText()
             }
-            is StressIntent.ClearResult -> {
+            is ChatIntent.ClearResult -> {
                 val newSessionId = System.currentTimeMillis()
                 _state.update { 
                     it.copy(
@@ -84,7 +84,7 @@ class StressViewModel(application: Application) : AndroidViewModel(application) 
                 }
                 loadChatMessages()
             }
-            is StressIntent.ToggleLike -> {
+            is ChatIntent.ToggleLike -> {
                 viewModelScope.launch(Dispatchers.IO) {
                     try {
                         adviceFeedbackDao.insertFeedback(
@@ -99,7 +99,7 @@ class StressViewModel(application: Application) : AndroidViewModel(application) 
                     }
                 }
             }
-            is StressIntent.SubmitFeedback -> {
+            is ChatIntent.SubmitFeedback -> {
                 val moodId = _state.value.lastInsertedMoodId
                 if (moodId != null) {
                     viewModelScope.launch(Dispatchers.IO) {
@@ -112,7 +112,7 @@ class StressViewModel(application: Application) : AndroidViewModel(application) 
                     _state.update { it.copy(hasSubmittedFeedback = true) }
                 }
             }
-            is StressIntent.LoadSession -> {
+            is ChatIntent.LoadSession -> {
                 // Not implemented
             }
         }

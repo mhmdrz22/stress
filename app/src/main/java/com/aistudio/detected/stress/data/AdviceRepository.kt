@@ -7,7 +7,7 @@ data class AdviceItem(
     val type: String
 )
 
-object LocalAdviceGraph {
+object AdviceRepository {
     private val adviceList = listOf(
         // === ANXIETY ===
         AdviceItem("anxiety", "تکنیک تنفس ۴-۷-۸", "این روش به آرامش سیستم عصبی کمک می‌کند. ۴ ثانیه دم، ۷ ثانیه نگه داشتن نفس، و ۸ ثانیه بازدم.", "تمرین عملی"),

@@ -20,7 +20,7 @@ import com.aistudio.detected.stress.ui.theme.ArameshTheme
 import kotlinx.coroutines.delay
 
 @Composable
-fun IntroScreen(onNavigateNext: () -> Unit) {
+fun OnboardingScreen(onNavigateNext: () -> Unit) {
     var startAnimation by remember { mutableStateOf(false) }
     
     val alphaAnim = animateFloatAsState(

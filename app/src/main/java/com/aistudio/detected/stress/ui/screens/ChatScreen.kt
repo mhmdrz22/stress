@@ -35,14 +35,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.aistudio.detected.stress.ui.components.GlassmorphismInputCard
 import com.aistudio.detected.stress.ui.components.VideoSuggestionsCarousel
 import com.aistudio.detected.stress.ui.theme.ArameshTheme
-import com.aistudio.detected.stress.viewmodel.StressIntent
-import com.aistudio.detected.stress.viewmodel.StressViewModel
+import com.aistudio.detected.stress.viewmodel.ChatIntent
+import com.aistudio.detected.stress.viewmodel.ChatViewModel
 import com.aistudio.detected.stress.data.local.ChatMessage
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(onNavigateStats: () -> Unit, onNavigateAdmin: () -> Unit = {}, viewModel: StressViewModel = viewModel()) {
+fun ChatScreen(onNavigateStats: () -> Unit, onNavigateAdmin: () -> Unit = {}, viewModel: ChatViewModel = viewModel()) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -59,8 +59,8 @@ fun MainScreen(onNavigateStats: () -> Unit, onNavigateAdmin: () -> Unit = {}, vi
             val matches = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
             if (!matches.isNullOrEmpty()) {
                 val newText = (state.inputText + " " + matches[0]).trim()
-                viewModel.processIntent(StressIntent.UpdateInput(newText))
-                viewModel.processIntent(StressIntent.SubmitAnalysis)
+                viewModel.processIntent(ChatIntent.UpdateInput(newText))
+                viewModel.processIntent(ChatIntent.SubmitAnalysis)
             }
         }
     }
@@ -93,7 +93,7 @@ fun MainScreen(onNavigateStats: () -> Unit, onNavigateAdmin: () -> Unit = {}, vi
                         IconButton(onClick = onNavigateStats) {
                             Icon(Icons.Default.DateRange, contentDescription = "تاریخچه", tint = ArameshTheme.colors.accentWood)
                         }
-                        IconButton(onClick = { viewModel.processIntent(StressIntent.ClearResult) }) {
+                        IconButton(onClick = { viewModel.processIntent(ChatIntent.ClearResult) }) {
                             Icon(Icons.Default.Refresh, contentDescription = "شروع مجدد", tint = ArameshTheme.colors.accentWood)
                         }
                     },
@@ -129,8 +129,8 @@ fun MainScreen(onNavigateStats: () -> Unit, onNavigateAdmin: () -> Unit = {}, vi
                         ) {
                             items(state.chatMessages) { message ->
                                 ChatBubble(message = message, onQuickReply = { text ->
-                                    viewModel.processIntent(StressIntent.UpdateInput(text))
-                                    viewModel.processIntent(StressIntent.SubmitAnalysis)
+                                    viewModel.processIntent(ChatIntent.UpdateInput(text))
+                                    viewModel.processIntent(ChatIntent.SubmitAnalysis)
                                 })
                                 Spacer(modifier = Modifier.height(16.dp))
                             }
@@ -152,7 +152,7 @@ fun MainScreen(onNavigateStats: () -> Unit, onNavigateAdmin: () -> Unit = {}, vi
                     GlassmorphismInputCard(
                         isMicLoading = isMicLoading,
                         value = state.inputText,
-                        onValueChange = { viewModel.processIntent(StressIntent.UpdateInput(it)) },
+                        onValueChange = { viewModel.processIntent(ChatIntent.UpdateInput(it)) },
                         onMicClick = {
                             val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                                 putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
@@ -165,7 +165,7 @@ fun MainScreen(onNavigateStats: () -> Unit, onNavigateAdmin: () -> Unit = {}, vi
                                 Toast.makeText(context, "سرویس تشخیص صدا پیدا نشد.", Toast.LENGTH_SHORT).show()
                             }
                         },
-                        onSubmit = { viewModel.processIntent(StressIntent.SubmitAnalysis) }
+                        onSubmit = { viewModel.processIntent(ChatIntent.SubmitAnalysis) }
                     )
                 }
             }

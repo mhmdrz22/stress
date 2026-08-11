@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.aistudio.detected.stress.data.local.MoodEntry
 import com.aistudio.detected.stress.ui.theme.ArameshTheme
-import com.aistudio.detected.stress.viewmodel.StressViewModel
+import com.aistudio.detected.stress.viewmodel.ChatViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.foundation.layout.FlowRow
@@ -30,7 +30,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun AdminDashboardScreen(onBack: () -> Unit, viewModel: StressViewModel = viewModel()) {
+fun AdminDashboardScreen(onBack: () -> Unit, viewModel: ChatViewModel = viewModel()) {
     val moods by viewModel.moodHistory.collectAsState()
     
     val totalConversations = moods.size

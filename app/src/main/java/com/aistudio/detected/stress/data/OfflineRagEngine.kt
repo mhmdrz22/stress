@@ -17,7 +17,7 @@ data class RagDocument(
     val empathy: String
 )
 
-class LocalJsonRagEngine(private val context: Context) {
+class OfflineRagEngine(private val context: Context) {
 
     private val documents = mutableListOf<RagDocument>()
     private val jsonParser = Json { ignoreUnknownKeys = true }

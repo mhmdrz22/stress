@@ -1,7 +1,7 @@
 package com.aistudio.detected.stress.agents
 
 import com.aistudio.detected.stress.data.AdviceItem
-import com.aistudio.detected.stress.data.LocalAdviceGraph
+import com.aistudio.detected.stress.data.AdviceRepository
 
 object AdviceGraphAgent {
     /**
@@ -9,7 +9,7 @@ object AdviceGraphAgent {
      * Selects actionable tips and video links from a static local graph.
      */
     fun getAdvice(category: String, likedTitles: Set<String>): AdviceGraphResult {
-        val adviceItems = LocalAdviceGraph.getAdviceForCategory(category, likedTitles.toList())
+        val adviceItems = AdviceRepository.getAdviceForCategory(category, likedTitles.toList())
         
         // Generate general search keywords
         val keywords = when (category) {

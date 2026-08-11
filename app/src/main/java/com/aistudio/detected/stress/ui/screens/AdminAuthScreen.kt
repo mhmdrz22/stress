@@ -16,7 +16,7 @@ import java.security.MessageDigest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AdminLoginScreen(onLoginSuccess: () -> Unit, onBack: () -> Unit) {
+fun AdminAuthScreen(onLoginSuccess: () -> Unit, onBack: () -> Unit) {
     var password by remember { mutableStateOf("") }
     var error by remember { mutableStateOf(false) }
 

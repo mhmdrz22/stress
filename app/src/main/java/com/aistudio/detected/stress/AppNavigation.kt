@@ -7,9 +7,9 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.aistudio.detected.stress.ui.screens.IntroScreen
-import com.aistudio.detected.stress.ui.screens.MainScreen
-import com.aistudio.detected.stress.ui.screens.StatsScreen
+import com.aistudio.detected.stress.ui.screens.OnboardingScreen
+import com.aistudio.detected.stress.ui.screens.ChatScreen
+import com.aistudio.detected.stress.ui.screens.DashboardScreen
 
 @Composable
 fun AppNavigation() {
@@ -22,25 +22,25 @@ fun AppNavigation() {
         exitTransition = { fadeOut(animationSpec = tween(700)) }
     ) {
         composable("intro") {
-            IntroScreen(onNavigateNext = {
+            OnboardingScreen(onNavigateNext = {
                 navController.navigate("main") {
                     popUpTo("intro") { inclusive = true }
                 }
             })
         }
         composable("main") {
-            MainScreen(
+            ChatScreen(
                 onNavigateStats = { navController.navigate("stats") },
                 onNavigateAdmin = { navController.navigate("admin_login") }
             )
         }
         composable("stats") {
-            StatsScreen(
+            DashboardScreen(
                 onBack = { navController.popBackStack() }
             )
         }
         composable("admin_login") {
-            com.aistudio.detected.stress.ui.screens.AdminLoginScreen(
+            com.aistudio.detected.stress.ui.screens.AdminAuthScreen(
                 onLoginSuccess = { 
                     navController.navigate("admin_dashboard") {
                         popUpTo("admin_login") { inclusive = true }

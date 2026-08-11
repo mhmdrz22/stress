@@ -8,7 +8,7 @@ import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 import android.util.Log
 
-class NeuroStressAnalyzer(private val context: Context) {
+class TFLiteClassifier(private val context: Context) {
 
     private var tflite: Interpreter? = null
     private val vocabMap = mutableMapOf<String, Int>()
@@ -22,10 +22,10 @@ class NeuroStressAnalyzer(private val context: Context) {
                 tflite = Interpreter(loadModelFile(), options)
                 loadVocab()
             } else {
-                Log.w("NeuroStressAnalyzer", "TFLite model is empty. Running in fallback mode.")
+                Log.w("TFLiteClassifier", "TFLite model is empty. Running in fallback mode.")
             }
         } catch (e: Exception) {
-            Log.w("NeuroStressAnalyzer", "TFLite model not loaded. Running in fallback mode.")
+            Log.w("TFLiteClassifier", "TFLite model not loaded. Running in fallback mode.")
             tflite = null
         }
     }
@@ -74,7 +74,7 @@ class NeuroStressAnalyzer(private val context: Context) {
                 "joy"
             }
         } catch (e: Exception) {
-            Log.e("NeuroStressAnalyzer", "Prediction failed", e)
+            Log.e("TFLiteClassifier", "Prediction failed", e)
             return "anxiety"
         }
     }
