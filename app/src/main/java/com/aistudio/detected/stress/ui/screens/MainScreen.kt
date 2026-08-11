@@ -8,12 +8,13 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
@@ -37,7 +38,6 @@ import com.aistudio.detected.stress.ui.theme.ArameshTheme
 import com.aistudio.detected.stress.viewmodel.StressIntent
 import com.aistudio.detected.stress.viewmodel.StressViewModel
 import com.aistudio.detected.stress.data.local.ChatMessage
-import com.airbnb.lottie.compose.*
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,7 +65,6 @@ fun MainScreen(onNavigateStats: () -> Unit, onNavigateAdmin: () -> Unit = {}, vi
         }
     }
     
-    // Auto-scroll to bottom when new messages arrive or loading state changes
     LaunchedEffect(state.chatMessages.size, state.isLoading) {
         if (state.chatMessages.isNotEmpty() || state.isLoading) {
             coroutineScope.launch {
@@ -107,7 +106,6 @@ fun MainScreen(onNavigateStats: () -> Unit, onNavigateAdmin: () -> Unit = {}, vi
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
-                // Chat area
                 Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                     if (state.chatMessages.isEmpty() && !state.isLoading) {
                         Column(
@@ -144,7 +142,6 @@ fun MainScreen(onNavigateStats: () -> Unit, onNavigateAdmin: () -> Unit = {}, vi
                     }
                 }
                 
-                // Input area
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -189,14 +186,28 @@ fun TypingIndicatorBubble() {
                     bottomEnd = 16.dp
                 ))
                 .background(ArameshTheme.colors.surfaceGlass)
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .padding(horizontal = 16.dp, vertical = 16.dp)
         ) {
-            val composition by rememberLottieComposition(LottieCompositionSpec.Url("https://assets9.lottiefiles.com/packages/lf20_t2xbwgij.json"))
-            LottieAnimation(
-                composition = composition,
-                iterations = LottieConstants.IterateForever,
-                modifier = Modifier.size(40.dp)
+            val transition = rememberInfiniteTransition()
+            
+            val alpha1 by transition.animateFloat(
+                initialValue = 0.2f, targetValue = 1f,
+                animationSpec = infiniteRepeatable(animation = tween(400), repeatMode = RepeatMode.Reverse)
             )
+            val alpha2 by transition.animateFloat(
+                initialValue = 0.2f, targetValue = 1f,
+                animationSpec = infiniteRepeatable(animation = tween(400, delayMillis = 200), repeatMode = RepeatMode.Reverse)
+            )
+            val alpha3 by transition.animateFloat(
+                initialValue = 0.2f, targetValue = 1f,
+                animationSpec = infiniteRepeatable(animation = tween(400, delayMillis = 400), repeatMode = RepeatMode.Reverse)
+            )
+            
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color.Gray.copy(alpha = alpha1)))
+                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color.Gray.copy(alpha = alpha2)))
+                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color.Gray.copy(alpha = alpha3)))
+            }
         }
     }
 }
@@ -233,14 +244,15 @@ fun ChatBubble(message: ChatMessage, onQuickReply: (String) -> Unit) {
         }
         
         if (!isUser) {
-            // Quick Replies (Chips)
             Spacer(modifier = Modifier.height(8.dp))
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.padding(start = 8.dp)
             ) {
-                QuickReplyChip("بیشتر توضیح بده", onQuickReply)
-                QuickReplyChip("الان حالم بهتره", onQuickReply)
+                val q1 = if (text.contains("خواب")) "چند ساعت بخوابم؟" else "بیشتر توضیح بده"
+                val q2 = if (text.contains("خشم")) "چطور آروم شم؟" else "الان حالم بهتره"
+                QuickReplyChip(q1, onQuickReply)
+                QuickReplyChip(q2, onQuickReply)
             }
         }
         

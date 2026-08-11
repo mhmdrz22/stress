@@ -5,6 +5,7 @@ import os
 import json
 import asyncio
 from typing import List
+import re
 
 router = APIRouter(tags=["Stress Analysis"])
 
@@ -44,23 +45,24 @@ async def analyze_chat(request: MultiTurnAnalyzeRequest = Body(...)):
         
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     for msg in request.history:
-        role = "assistant" if msg.role == "agent" or msg.role == "model" else "user"
+        role = "assistant" if msg.role in ["agent", "model"] else "user"
         messages.append({"role": role, "content": msg.text})
     
     messages.append({"role": "user", "content": request.current_message})
         
     try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             headers = {
                 "Authorization": f"Bearer {HF_TOKEN}",
                 "Content-Type": "application/json"
             }
-            # Hugging Face Serverless API (using meta-llama/Meta-Llama-3.1-8B-Instruct or Qwen)
+            # Using Qwen2.5-7B-Instruct since it is highly performant for Persian logic, but increased timeout to 30s.
+            # If rate limited, a smaller model could be used: Qwen/Qwen2.5-7B-Instruct
             response = await client.post(
-                "https://api-inference.huggingface.co/models/Qwen/Qwen2.5-72B-Instruct/v1/chat/completions",
+                "https://api-inference.huggingface.co/models/Qwen/Qwen2.5-7B-Instruct/v1/chat/completions",
                 headers=headers,
                 json={
-                    "model": "Qwen/Qwen2.5-72B-Instruct",
+                    "model": "Qwen/Qwen2.5-7B-Instruct",
                     "messages": messages,
                     "temperature": 0.3,
                     "max_tokens": 800,
@@ -74,13 +76,12 @@ async def analyze_chat(request: MultiTurnAnalyzeRequest = Body(...)):
             data = response.json()
             content = data["choices"][0]["message"]["content"]
             
+            # Robust JSON extraction
+            match = re.search(r'\{.*\}', content, re.DOTALL)
+            if match:
+                content = match.group(0)
+            
             try:
-                # Sometimes models wrap JSON in code blocks
-                if content.startswith("```json"):
-                    content = content[7:-3]
-                elif content.startswith("```"):
-                    content = content[3:-3]
-                    
                 parsed = json.loads(content)
                 return AnalyzeResponse(**parsed)
             except (json.JSONDecodeError, TypeError, ValueError) as e:
