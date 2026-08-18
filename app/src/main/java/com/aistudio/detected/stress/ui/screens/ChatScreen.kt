@@ -224,6 +224,9 @@ fun ChatScreen(onNavigateStats: () -> Unit, onNavigateAdmin: () -> Unit = {}, on
                                 // For simplicity, we trigger the feedback based on the last advice category
                                 // The ViewModel already supports ChatIntent.SubmitFeedback or ToggleLike
                                 viewModel.processIntent(ChatIntent.SubmitFeedback(isLiked))
+                            },
+                            onAdviceFeedback = { adviceId, isLiked ->
+                                viewModel.processIntent(ChatIntent.ToggleLike(adviceId, isLiked))
                             }
                         )
                         Spacer(modifier = Modifier.height(16.dp))
@@ -342,7 +345,7 @@ fun BeautifulChatBubble(
                             if (feedbackGiven != false) {
                                 Text(
                                     text = "👍", 
-                                    modifier = Modifier.clickable { feedbackGiven = true; onFeedback(true) }.padding(horizontal = 4.dp),
+                                    modifier = Modifier.clickable { feedbackGiven = true; onFeedback(true); adviceIds.forEach { id -> onAdviceFeedback(id, true) } }.padding(horizontal = 4.dp),
                                     fontSize = 14.sp,
                                     color = if (feedbackGiven == true) SageGreen else Color.Gray
                                 )
@@ -350,7 +353,7 @@ fun BeautifulChatBubble(
                             if (feedbackGiven != true) {
                                 Text(
                                     text = "👎", 
-                                    modifier = Modifier.clickable { feedbackGiven = false; onFeedback(false) }.padding(horizontal = 4.dp),
+                                    modifier = Modifier.clickable { feedbackGiven = false; onFeedback(false); adviceIds.forEach { id -> onAdviceFeedback(id, false) } }.padding(horizontal = 4.dp),
                                     fontSize = 14.sp,
                                     color = if (feedbackGiven == false) Color.Red else Color.Gray
                                 )

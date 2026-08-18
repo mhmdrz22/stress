@@ -1,11 +1,5 @@
 package com.aistudio.detected.stress.data
 
-enum class StressLevel {
-    LOW,
-    MODERATE,
-    HIGH,
-    URGENT
-}
 
 data class AdviceItem(
     val id: String,

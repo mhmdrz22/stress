@@ -55,7 +55,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     val allChatMessages: StateFlow<List<ChatMessage>> = chatDao.getAllMessagesFlow()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
         
-    val likedAdviceTitles: StateFlow<List<String>> = adviceFeedbackDao.getLikedAdviceTitles()
+    val likedAdviceIds: StateFlow<List<String>> = adviceFeedbackDao.getLikedAdviceIds()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val assessmentHistory = stressAssessmentDao.observeAll()

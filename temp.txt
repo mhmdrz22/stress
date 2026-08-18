@@ -1,0 +1,16 @@
+                            if (feedbackGiven != false) {
+                                Text(
+                                    text = "👍", 
+                                    modifier = Modifier.clickable { feedbackGiven = true; onFeedback(true) }.padding(horizontal = 4.dp),
+                                    fontSize = 14.sp,
+                                    color = if (feedbackGiven == true) SageGreen else Color.Gray
+                                )
+                            }
+                            if (feedbackGiven != true) {
+                                Text(
+                                    text = "👎", 
+                                    modifier = Modifier.clickable { feedbackGiven = false; onFeedback(false) }.padding(horizontal = 4.dp),
+                                    fontSize = 14.sp,
+                                    color = if (feedbackGiven == false) Color.Red else Color.Gray
+                                )
+                            }

@@ -41,17 +41,17 @@ class AdvicePolicyAgentTest {
                 isCrisis = false
             )
         )
-        val shown = first.adviceList.map { it.title }.toSet()
+        val shown = first.adviceList.map { it.id }.toSet()
 
         val second = AdvicePolicyAgent.select(
             AdvicePolicyRequest(
                 category = "anxiety",
                 stressLevel = StressLevel.MODERATE,
                 isCrisis = false,
-                previouslyShownTitles = shown
+                previouslyShownIds = shown
             )
         )
 
-        assertTrue(second.adviceList.none { it.title in shown } || second.adviceList.isEmpty())
+        assertTrue(second.adviceList.none { it.id in shown } || second.adviceList.isEmpty())
     }
 }

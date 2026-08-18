@@ -13,7 +13,8 @@ object Orchestrator {
         text: String,
         history: List<ChatMessage>,
         deviceId: String,
-        assessmentLevel: StressLevel? = null
+        assessmentLevel: StressLevel? = null,
+        likedIds: Set<String> = emptySet()
     ): CriticResult {
         when (val safety = SafetyGate.evaluate(text)) {
             is SafetyGateResult -> when (safety.status) {
@@ -51,14 +52,14 @@ object Orchestrator {
         val baseAdvice = AdviceGraphAgent.getAdvice(
             category = perception.category,
             history = history,
-            likedTitles = emptyList()
+            likedIds = likedIds.toList()
         )
 
-        val shownTitles = history
+        val shownIds = history
             .flatMap { message ->
                 baseAdvice.adviceList
-                    .filter { advice -> message.content.contains(advice.title) }
-                    .map { advice -> advice.title }
+                    .filter { advice -> message.content.contains(advice.id) }
+                    .map { advice -> advice.id }
             }
             .toSet()
 
@@ -67,8 +68,8 @@ object Orchestrator {
                 category = perception.category,
                 stressLevel = assessmentLevel,
                 isCrisis = false,
-                previouslyShownTitles = shownTitles,
-                likedTitles = emptySet()
+                previouslyShownIds = shownIds,
+                likedIds = likedIds
             )
         )
 
