@@ -254,12 +254,17 @@ fun HistoryItem(entry: MoodEntry) {
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = entry.userInput,
-                style = ArameshTheme.typography.body,
-                color = ArameshTheme.colors.primaryText,
-                maxLines = 2
-            )
+            val details = buildString {
+                if (entry.stressLevel != null) append("سطح استرس: ${entry.stressLevel}")
+                if (entry.stressScore != null) append(" (نمره ${entry.stressScore})")
+            }
+            if (details.isNotEmpty()) {
+                Text(
+                    text = details,
+                    style = ArameshTheme.typography.body,
+                    color = ArameshTheme.colors.primaryText
+                )
+            }
         }
     }
 }

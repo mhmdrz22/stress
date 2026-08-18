@@ -119,7 +119,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun analyzeText() {
-        val currentText = _state.value.inputText
+        val currentText = _state.value.inputText.trim()
         if (currentText.isBlank()) return
         
         val sessionId = _state.value.sessionId
@@ -129,6 +129,23 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         
         viewModelScope.launch(Dispatchers.Default) {
             try {
+                val safety = com.aistudio.detected.stress.agents.SafetyGate.evaluate(currentText)
+
+                if (safety.status == com.aistudio.detected.stress.agents.SafetyStatus.URGENT) {
+                    val crisisUserMsg = ChatMessage(sessionId = sessionId, sender = "user", content = currentText)
+                    val crisisAgentMsg = ChatMessage(sessionId = sessionId, sender = "agent", content = "${safety.message.orEmpty()}|||crisis|||")
+            
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            chatMessages = it.chatMessages + crisisUserMsg + crisisAgentMsg,
+                            error = null
+                        )
+                    }
+                    // عمداً متن بحران ذخیره یا به شبکه فرستاده نمیشود.
+                    return@launch
+                }
+                
                 // Add user message to DB
                 withContext(Dispatchers.IO) {
                     chatDao.insertMessage(ChatMessage(sessionId = sessionId, sender = "user", content = currentText))
@@ -163,7 +180,6 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 val insertedId = withContext(Dispatchers.IO) {
                     moodDao.insertMood(MoodEntry(
                         dateMillis = System.currentTimeMillis(),
-                        userInput = currentText,
                         categoryTag = orchestratorResult.category,
                         hasStress = orchestratorResult.hasStress
                     ))

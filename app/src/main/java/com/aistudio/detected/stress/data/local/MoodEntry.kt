@@ -8,7 +8,9 @@ data class MoodEntry(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val dateMillis: Long,
-    val userInput: String,
+    val stressScore: Int? = null,
+    val stressMaxScore: Int? = null,
+    val stressLevel: String? = null,
     val categoryTag: String,
     val hasStress: Boolean,
     val isPredictionCorrect: Boolean? = null

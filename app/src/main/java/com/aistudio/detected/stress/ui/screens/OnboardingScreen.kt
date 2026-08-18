@@ -82,16 +82,12 @@ fun ZenLogo() {
         label = "breathe"
     )
 
-    androidx.compose.foundation.Image(
-        painter = androidx.compose.ui.res.painterResource(id = com.aistudio.detected.stress.R.drawable.aramesh_logo),
-        contentDescription = "Aramesh Logo",
+    com.aistudio.detected.stress.ui.components.ArameshSunriseLogo(
         modifier = Modifier
             .size(150.dp)
             .graphicsLayer {
                 scaleX = breatheAnim
                 scaleY = breatheAnim
             }
-            .clip(androidx.compose.foundation.shape.CircleShape),
-        contentScale = androidx.compose.ui.layout.ContentScale.Crop
     )
 }

@@ -1,65 +1,115 @@
 package com.aistudio.detected.stress.agents
 
-import com.aistudio.detected.stress.data.AdviceItem
+object PerceptionAgent {
 
-object CriticAgent {
-    /**
-     * Agent 4: Safety & Crisis Guard (نگهبان بحران)
-     */
-    fun evaluate(
-        perception: PerceptionResult,
-        rag: RagResult,
-        advice: AdviceGraphResult
-    ): CriticResult {
-        
-        if (perception.isCrisis) {
-            return CriticResult(
-                hasStress = true,
-                category = "crisis",
-                empathyMessage = rag.empathyMessage + "\nلطفاً در صورت نیاز به کمک فوری با شماره 1480 (صدای مشاور) یا 123 (اورژانس اجتماعی) تماس بگیر.",
-                adviceList = emptyList(), // No generic advice during crisis
-                searchKeywords = emptyList(),
-                isReliable = true,
-                isCrisis = true
-            )
+    private val persianChars = Regex("[\u0600-\u06FF]")
+    
+    private val englishNegative = listOf(
+        "stress", "anxious", "worried", "tired", "depressed", "angry",
+        "sad", "can't", "cant", "cannot", "unable", "focus", "exam",
+        "fail", "fear", "panic", "burnout", "sleep", "insomnia",
+        "hopeless", "frustrated", "overwhelmed", "lonely", "empty",
+        "dont", "dont have", "nervous", "tension", "pressure"
+    )
+
+    private val persianRoots = mapOf(
+        "استرس" to listOf("استرس", "استرس دارم", "استرسی", "استرسم", "اضطراب"),
+        "خسته" to listOf("خسته", "خستگی", "خستم", "خسته‌ام", "فرسوده"),
+        "نگران" to listOf("نگران", "نگرانی", "نگرون", "نگرانم", "دلواپس"),
+        "عصبی" to listOf("عصبی", "عصبانی", "خشم", "عصبانیتم", "دلخور", "عصبانیم"),
+        "افسرده" to listOf("افسرده", "افسردگی", "غمگین", "ناامید", "یأس", "دپرس"),
+        "خواب" to listOf("خواب", "بی‌خوابی", "خوابم نمیبره", "بی خواب", "بیخوابی"),
+        "امتحان" to listOf("امتحان", "کنکور", "آزمون", "درس", "معدل", "نمره", "دانشگاه"),
+        "تمرکز" to listOf("تمرکز", "حواس", "حواسم پرت", "تمرکز ندارم", "حواسم جمع نیست"),
+        "بد" to listOf("بد", "افتضاح", "خراب", "disaster", "فاجعه", "وحشتناک")
+    )
+
+    data class AnalysisResult(
+        val hasStress: Boolean,
+        val severity: Int,
+        val category: String,
+        val confidence: Float,
+        val isCrisis: Boolean,
+        val detectedLanguage: String,
+        val extractedKeywords: List<String>
+    )
+
+    fun analyze(text: String): AnalysisResult {
+        val normalized = text.lowercase().trim()
+        val isPersian = persianChars.containsMatchIn(text)
+        val hasEnglishLetters = normalized.any { it in 'a'..'z' }
+        val lang = when {
+            isPersian && hasEnglishLetters -> "mixed"
+            isPersian -> "fa"
+            else -> "en"
         }
-        
-        val finalHasStress = if (perception.confidence < 0.3f) false else perception.hasStress
-        
-        var finalMessage = rag.empathyMessage
-        if (perception.confidence < 0.5f && finalHasStress) {
-            finalMessage = "برداشت من اینه که ممکنه کمی استرس داشته باشی، اما مطمئن نیستم. $finalMessage"
+
+        var stressScore = 0
+        val detectedKeywords = mutableListOf<String>()
+
+        // === Persian Analysis ===
+        if (isPersian) {
+            for ((root, variants) in persianRoots) {
+                if (variants.any { normalized.contains(it) }) {
+                    stressScore += when (root) {
+                        "استرس", "خسته", "افسرده" -> 3
+                        "نگران", "عصبی" -> 2
+                        else -> 1
+                    }
+                    detectedKeywords.add(root)
+                }
+            }
         }
-        
-        val finalAdvice = if (finalHasStress) advice.adviceList else emptyList()
-        val finalKeywords = if (finalHasStress) advice.searchKeywords else emptyList()
-        
-        return CriticResult(
-            hasStress = finalHasStress,
-            category = perception.category,
-            empathyMessage = finalMessage,
-            adviceList = finalAdvice,
-            searchKeywords = finalKeywords,
-            isReliable = perception.confidence >= 0.5f,
-            isCrisis = false
+
+        // === English Analysis ===
+        if (hasEnglishLetters || lang == "mixed") {
+            for (word in englishNegative) {
+                if (normalized.contains(word)) {
+                    stressScore += 2
+                    detectedKeywords.add(word)
+                }
+            }
+        }
+
+        // === Context Amplification ===
+        if (detectedKeywords.contains("امتحان") || detectedKeywords.contains("exam")) {
+            if (detectedKeywords.contains("تمرکز") || detectedKeywords.contains("focus")) {
+                stressScore += 3
+            }
+        }
+        if (detectedKeywords.contains("cant") || detectedKeywords.contains("cannot") || detectedKeywords.contains("unable")) {
+            stressScore += 2
+        }
+
+        val hasStress = stressScore > 0
+        val severity = (stressScore * 10).coerceAtMost(100)
+
+        val category = when {
+            detectedKeywords.contains("عصبی") || detectedKeywords.contains("angry") -> "anger"
+            detectedKeywords.contains("خواب") || detectedKeywords.contains("sleep") -> "sleep"
+            detectedKeywords.contains("خسته") || detectedKeywords.contains("tired") -> "burnout"
+            detectedKeywords.contains("افسرده") || detectedKeywords.contains("depressed") -> "depression"
+            detectedKeywords.contains("امتحان") || detectedKeywords.contains("exam") -> "exam_stress"
+            detectedKeywords.contains("تمرکز") || detectedKeywords.contains("focus") -> "anxiety"
+            hasStress -> "anxiety"
+            else -> "joy"
+        }
+
+        val confidence = when {
+            stressScore >= 5 -> 0.9f
+            stressScore >= 3 -> 0.75f
+            stressScore >= 1 -> 0.6f
+            else -> 0.2f
+        }
+
+        return AnalysisResult(
+            hasStress = hasStress,
+            severity = severity,
+            category = category,
+            confidence = confidence,
+            isCrisis = false,
+            detectedLanguage = lang,
+            extractedKeywords = detectedKeywords.distinct()
         )
     }
 }
-
-data class PerceptionResult(
-    val hasStress: Boolean,
-    val severity: Int,
-    val category: String,
-    val confidence: Float,
-    val isCrisis: Boolean
-)
-
-data class CriticResult(
-    val hasStress: Boolean,
-    val category: String,
-    val empathyMessage: String,
-    val adviceList: List<AdviceItem>,
-    val searchKeywords: List<String>,
-    val isReliable: Boolean,
-    val isCrisis: Boolean = false
-)

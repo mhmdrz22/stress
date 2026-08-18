@@ -42,11 +42,16 @@ fun VideoSuggestionsCarousel(queries: List<String>) {
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = PaddingValues(horizontal = 8.dp)
     ) {
-        itemsIndexed(queries) { index, query ->
+        itemsIndexed(queries) { index, queryData ->
+            val parts = queryData.split("~")
+            val title = parts[0]
+            val actualUrl = if (parts.size > 1) parts[1] else ""
+            
             VideoCard(
-                query = query,
+                query = title,
                 gradientColors = colors[index % colors.size],
                 duration = durations[index % durations.size],
+                actualUrl = actualUrl,
                 onPlatformClick = { url ->
                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
                     context.startActivity(intent)
@@ -57,7 +62,7 @@ fun VideoSuggestionsCarousel(queries: List<String>) {
 }
 
 @Composable
-fun VideoCard(query: String, gradientColors: List<Color>, duration: String, onPlatformClick: (String) -> Unit) {
+fun VideoCard(query: String, gradientColors: List<Color>, duration: String, actualUrl: String = "", onPlatformClick: (String) -> Unit) {
     Card(
         modifier = Modifier
             .width(220.dp)
@@ -125,18 +130,26 @@ fun VideoCard(query: String, gradientColors: List<Color>, duration: String, onPl
                         style = ArameshTheme.typography.label.copy(fontSize = 12.sp)
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        PlatformTag(
-                            name = "یوتیوب",
-                            color = Color(0xFFEF4444),
-                            bgColor = Color(0xFFFEE2E2),
-                            onClick = { onPlatformClick("https://www.youtube.com/results?search_query=${Uri.encode(query)}") }
-                        )
-                        PlatformTag(
-                            name = "آپارات",
-                            color = Color(0xFF9333EA),
-                            bgColor = Color(0xFFF3E8FF),
-                            onClick = { onPlatformClick("https://www.aparat.com/search/${Uri.encode(query)}") }
-                        )
+                        if (actualUrl.isNotEmpty()) {
+                            val platformName = if (actualUrl.contains("youtube")) "یوتیوب" else if (actualUrl.contains("aparat")) "آپارات" else "لینک مستقیم"
+                            val platformColor = if (actualUrl.contains("youtube")) Color(0xFFEF4444) else if (actualUrl.contains("aparat")) Color(0xFF9333EA) else Color(0xFF0EA5E9)
+                            val platformBg = if (actualUrl.contains("youtube")) Color(0xFFFEE2E2) else if (actualUrl.contains("aparat")) Color(0xFFF3E8FF) else Color(0xFFE0F2FE)
+                            
+                            PlatformTag(
+                                name = "باز کردن ($platformName)",
+                                color = platformColor,
+                                bgColor = platformBg,
+                                onClick = { onPlatformClick(actualUrl) }
+                            )
+                        } else {
+                            // Fallback to youtube search if no direct URL is provided
+                            PlatformTag(
+                                name = "جستجوی یوتیوب",
+                                color = Color(0xFFEF4444),
+                                bgColor = Color(0xFFFEE2E2),
+                                onClick = { onPlatformClick("https://www.youtube.com/results?search_query=${Uri.encode(query)}") }
+                            )
+                        }
                     }
                 }
             }

@@ -18,10 +18,11 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -52,7 +53,7 @@ val BubbleGray = Color(0xFFFFFFFF)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatScreen(onNavigateStats: () -> Unit, onNavigateAdmin: () -> Unit = {}, viewModel: ChatViewModel = viewModel()) {
+fun ChatScreen(onNavigateStats: () -> Unit, onNavigateAdmin: () -> Unit = {}, onNavigateAssessment: () -> Unit = {}, viewModel: ChatViewModel = viewModel()) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -115,6 +116,9 @@ fun ChatScreen(onNavigateStats: () -> Unit, onNavigateAdmin: () -> Unit = {}, vi
                         }
                         
                         Row {
+                            IconButton(onClick = onNavigateAssessment) {
+                                Icon(Icons.Default.CheckCircle, contentDescription = "ارزیابی استرس", tint = SageGreen)
+                            }
                             IconButton(onClick = onNavigateStats) {
                                 Icon(Icons.Default.DateRange, contentDescription = "تاریخچه", tint = SageGreen)
                             }
@@ -224,7 +228,7 @@ fun ChatScreen(onNavigateStats: () -> Unit, onNavigateAdmin: () -> Unit = {}, vi
                                 .background(SageGreen, RoundedCornerShape(50))
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.Send, 
+                                imageVector = Icons.AutoMirrored.Filled.Send, 
                                 contentDescription = "ارسال", 
                                 tint = BubbleGray
                             )

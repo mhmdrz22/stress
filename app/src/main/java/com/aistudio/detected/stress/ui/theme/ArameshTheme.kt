@@ -14,13 +14,13 @@ import androidx.compose.ui.unit.sp
 
 @Immutable
 data class ArameshColors(
-    val background: Color = Color(0xFFF7F5F0),
-    val surfaceGlass: Color = Color(0x1AFFFFFF),
-    val primaryText: Color = Color(0xFF2D2C2A),
-    val secondaryText: Color = Color(0xFF8A8782),
-    val accentWood: Color = Color(0xFF8B6B4A),
-    val accentGreen: Color = Color(0xFF6B806D),
-    val borderLight: Color = Color(0x33FFFFFF)
+    val background: Color = Color(0xFFF9F7F1), // SoftSand
+    val surfaceGlass: Color = Color(0xFFFFFFFF), // BubbleGray
+    val primaryText: Color = Color(0xFF4A5D53), // DarkEarth
+    val secondaryText: Color = Color(0xFF8DA399), // SageGreen
+    val accentWood: Color = Color(0xFF8DA399), // SageGreen (Used for User Bubbles)
+    val accentGreen: Color = Color(0xFFE5B96E), // SunriseGold
+    val borderLight: Color = Color(0x338DA399)
 )
 
 val PremiumFontFamily = FontFamily.Default

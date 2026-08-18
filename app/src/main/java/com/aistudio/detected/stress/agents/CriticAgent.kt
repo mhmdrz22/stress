@@ -2,50 +2,6 @@ package com.aistudio.detected.stress.agents
 
 import com.aistudio.detected.stress.data.AdviceItem
 
-object CriticAgent {
-    /**
-     * Agent 4: Safety & Crisis Guard (نگهبان بحران)
-     */
-    fun evaluate(
-        perception: PerceptionResult,
-        rag: RagResult,
-        advice: AdviceGraphResult
-    ): CriticResult {
-        
-        if (perception.isCrisis) {
-            return CriticResult(
-                hasStress = true,
-                category = "crisis",
-                empathyMessage = rag.empathyMessage + "\nلطفاً در صورت نیاز به کمک فوری با شماره 1480 (صدای مشاور) یا 123 (اورژانس اجتماعی) تماس بگیر.",
-                adviceList = emptyList(), // No generic advice during crisis
-                searchKeywords = emptyList(),
-                isReliable = true,
-                isCrisis = true
-            )
-        }
-        
-        val finalHasStress = if (perception.confidence < 0.4f) false else perception.hasStress
-        
-        var finalMessage = rag.empathyMessage
-        if (perception.confidence < 0.5f && finalHasStress) {
-            finalMessage = "برداشت من اینه که ممکنه کمی استرس داشته باشی، اما مطمئن نیستم. $finalMessage"
-        }
-        
-        val finalAdvice = if (finalHasStress) advice.adviceList else emptyList()
-        val finalKeywords = if (finalHasStress) advice.searchKeywords else emptyList()
-        
-        return CriticResult(
-            hasStress = finalHasStress,
-            category = perception.category,
-            empathyMessage = finalMessage,
-            adviceList = finalAdvice,
-            searchKeywords = finalKeywords,
-            isReliable = perception.confidence >= 0.5f,
-            isCrisis = false
-        )
-    }
-}
-
 data class PerceptionResult(
     val hasStress: Boolean,
     val severity: Int,
@@ -63,3 +19,43 @@ data class CriticResult(
     val isReliable: Boolean,
     val isCrisis: Boolean = false
 )
+
+object CriticAgent {
+    fun evaluate(
+        perception: PerceptionResult,
+        rag: RagResult,
+        advice: AdviceGraphResult
+    ): CriticResult {
+        if (perception.isCrisis) {
+            return CriticResult(
+                hasStress = true,
+                category = "crisis",
+                empathyMessage = SafetyGate.urgentMessage(),
+                adviceList = emptyList(),
+                searchKeywords = emptyList(),
+                isReliable = true,
+                isCrisis = true
+            )
+        }
+
+        val reliable = perception.confidence >= 0.5f
+        val hasStress = perception.hasStress && perception.confidence >= 0.3f
+
+        val message = when {
+            hasStress && !reliable ->
+                "ممکن است تحت فشار یا استرس باشی، اما مطمئن نیستم. ${rag.empathyMessage}"
+
+            else -> rag.empathyMessage
+        }
+
+        return CriticResult(
+            hasStress = hasStress,
+            category = perception.category,
+            empathyMessage = message,
+            adviceList = if (hasStress) advice.adviceList else emptyList(),
+            searchKeywords = if (hasStress) advice.searchKeywords else emptyList(),
+            isReliable = reliable,
+            isCrisis = false
+        )
+    }
+}

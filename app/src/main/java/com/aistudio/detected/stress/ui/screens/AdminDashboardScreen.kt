@@ -192,7 +192,12 @@ fun RecentMoodCard(mood: MoodEntry) {
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Text(mood.userInput, style = ArameshTheme.typography.body)
+            val details = buildString {
+                if (mood.stressLevel != null) append("سطح استرس: ${mood.stressLevel}")
+                if (mood.stressScore != null) append(" (نمره ${mood.stressScore})")
+                if (mood.categoryTag.isNotEmpty()) append("\nدسته‌بندی: ${mood.categoryTag}")
+            }
+            Text(details, style = ArameshTheme.typography.body)
             Spacer(modifier = Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 val badgeColor = if (mood.hasStress) Color(0xFFFECACA) else Color(0xFFFEF08A)
