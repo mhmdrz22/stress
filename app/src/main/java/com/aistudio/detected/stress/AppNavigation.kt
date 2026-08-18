@@ -8,16 +8,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.aistudio.detected.stress.ui.screens.OnboardingScreen
 import com.aistudio.detected.stress.ui.screens.ChatScreen
 import com.aistudio.detected.stress.ui.screens.DashboardScreen
+import com.aistudio.detected.stress.ui.screens.StressAssessmentScreen
+import com.aistudio.detected.stress.viewmodel.ChatViewModel
+import com.aistudio.detected.stress.viewmodel.ChatIntent
 
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
+    val chatViewModel: ChatViewModel = viewModel()
 
     NavHost(
         navController = navController, 
@@ -36,7 +41,8 @@ fun AppNavigation() {
             ChatScreen(
                 onNavigateStats = { navController.navigate("stats") },
                 onNavigateAdmin = { navController.navigate("admin_login") },
-                onNavigateAssessment = { navController.navigate("assessment") }
+                onNavigateAssessment = { navController.navigate("assessment") },
+                viewModel = chatViewModel
             )
         }
         composable("stats") {
@@ -45,9 +51,17 @@ fun AppNavigation() {
             )
         }
         composable("assessment") {
-            com.aistudio.detected.stress.ui.screens.StressAssessmentScreen { level, score, maxScore ->
-                navController.navigate("assessment_result/${level.name}/$score/$maxScore")
-            }
+            StressAssessmentScreen(
+                onCompleted = { result ->
+                    chatViewModel.processIntent(ChatIntent.AssessmentCompleted(result))
+                    navController.navigate("main") {
+                        popUpTo("assessment") { inclusive = true }
+                    }
+                },
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
         }
         composable("assessment_result/{level}/{score}/{maxScore}") { backStackEntry ->
             val level = backStackEntry.arguments?.getString("level") ?: ""

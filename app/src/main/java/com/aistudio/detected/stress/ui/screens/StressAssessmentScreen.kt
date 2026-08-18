@@ -23,22 +23,40 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.aistudio.detected.stress.data.StressAssessmentEngine
-import com.aistudio.detected.stress.data.StressLevel
+import com.aistudio.detected.stress.data.StressAssessmentInput
+import com.aistudio.detected.stress.data.StressAssessmentResult
 
-private val questions = listOf(
-    "در یک هفتهٔ گذشته، چقدر احساس تنش یا فشار داشته‌ای؟",
-    "چقدر کنترل‌کردن نگرانی‌ها برایت دشوار بوده است؟",
-    "چقدر استرس روی خواب، تمرکز یا کارهای روزانه‌ات اثر گذاشته است؟",
-    "چقدر احساس خستگی یا فرسودگی داشته‌ای؟"
+private val stressQuestions = listOf(
+    "در یک هفتهٔ گذشته، چقدر احساس تنش یا فشار داشتهای؟",
+    "چقدر کنترلکردن نگرانیها برایت دشوار بوده است؟",
+    "چقدر استرس روی خواب، تمرکز یا کارهای روزانهات اثر گذاشته است؟",
+    "چقدر احساس خستگی یا فرسودگی داشتهای؟"
+)
+
+private val answerLabels = listOf(
+    "هرگز",
+    "بهندرت",
+    "گاهی",
+    "اغلب",
+    "تقریباً همیشه"
 )
 
 @Composable
 fun StressAssessmentScreen(
-    onResult: (level: StressLevel, score: Int, maxScore: Int) -> Unit
+    onCompleted: (StressAssessmentResult) -> Unit,
+    onBack: () -> Unit
 ) {
-    var answers by remember { mutableStateOf(List<Int?>(questions.size) { null }) }
-    var immediateConcern by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var answers by remember {
+        mutableStateOf(List<Int?>(stressQuestions.size) { null })
+    }
+
+    var immediateSafetyConcern by remember {
+        mutableStateOf(false)
+    }
+
+    var errorMessage by remember {
+        mutableStateOf<String?>(null)
+    }
 
     Column(
         modifier = Modifier
@@ -52,75 +70,105 @@ fun StressAssessmentScreen(
             style = MaterialTheme.typography.headlineSmall
         )
 
-        Text("این ابزار تشخیص پزشکی نیست و فقط برای بررسی اولیه طراحی شده است.")
+        Text(
+            text = "این یک بررسی خوداظهاری است و تشخیص پزشکی یا جایگزین کمک حرفهای نیست.",
+            style = MaterialTheme.typography.bodyMedium
+        )
 
-        questions.forEachIndexed { questionIndex, question ->
-            Column {
-                Text(question)
-
-                (0..4).forEach { value ->
-                    val label = listOf(
-                        "هرگز",
-                        "به‌ندرت",
-                        "گاهی",
-                        "اغلب",
-                        "تقریباً همیشه"
-                    )[value]
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        RadioButton(
-                            selected = answers[questionIndex] == value,
-                            onClick = {
-                                answers = answers.toMutableList().also {
-                                    it[questionIndex] = value
-                                }
-                                error = null
-                            }
-                        )
-                        Text(label, modifier = Modifier.padding(top = 12.dp))
+        stressQuestions.forEachIndexed { questionIndex, question ->
+            QuestionCard(
+                question = question,
+                selectedAnswer = answers[questionIndex],
+                onAnswerSelected = { answer ->
+                    answers = answers.toMutableList().also {
+                        it[questionIndex] = answer
                     }
+                    errorMessage = null
                 }
-            }
+            )
         }
 
-        Row {
+        Row(modifier = Modifier.fillMaxWidth()) {
             Checkbox(
-                checked = immediateConcern,
-                onCheckedChange = { immediateConcern = it }
+                checked = immediateSafetyConcern,
+                onCheckedChange = {
+                    immediateSafetyConcern = it
+                    errorMessage = null
+                }
             )
+
             Text(
-                "الان احساس می‌کنم در خطر فوری هستم یا ممکن است نتوانم ایمن بمانم.",
+                text = "الان احساس میکنم در خطر فوری هستم یا ممکن است نتوانم ایمن بمانم.",
                 modifier = Modifier.padding(top = 12.dp)
             )
         }
 
-        error?.let {
-            Text(it, color = MaterialTheme.colorScheme.error)
+        errorMessage?.let { error ->
+            Text(
+                text = error,
+                color = MaterialTheme.colorScheme.error
+            )
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Button(
-            modifier = Modifier.fillMaxWidth(),
             onClick = {
                 if (answers.any { it == null }) {
-                    error = "لطفاً به همهٔ پرسش‌ها پاسخ بده."
+                    errorMessage = "لطفاً به همهٔ پرسشها پاسخ بده."
                     return@Button
                 }
 
                 val result = StressAssessmentEngine.assess(
-                    input = com.aistudio.detected.stress.data.StressAssessmentInput(
+                    StressAssessmentInput(
                         answers = answers.filterNotNull(),
-                        hasImmediateSafetyConcern = immediateConcern
+                        hasImmediateSafetyConcern = immediateSafetyConcern
                     )
                 )
 
-                onResult(result.level, result.totalScore, result.maxScore)
-            }
+                onCompleted(result)
+            },
+            modifier = Modifier.fillMaxWidth()
         ) {
             Text("نمایش نتیجه")
+        }
+
+        Button(
+            onClick = onBack,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("بازگشت")
+        }
+    }
+}
+
+@Composable
+private fun QuestionCard(
+    question: String,
+    selectedAnswer: Int?,
+    onAnswerSelected: (Int) -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            text = question,
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        answerLabels.forEachIndexed { index, label ->
+            Row(modifier = Modifier.fillMaxWidth()) {
+                RadioButton(
+                    selected = selectedAnswer == index,
+                    onClick = { onAnswerSelected(index) }
+                )
+
+                Text(
+                    text = label,
+                    modifier = Modifier.padding(top = 12.dp)
+                )
+            }
         }
     }
 }

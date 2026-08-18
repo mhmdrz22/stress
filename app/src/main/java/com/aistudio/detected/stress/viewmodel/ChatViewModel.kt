@@ -79,7 +79,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                         isOffline = false, 
                         lastInsertedMoodId = null, 
                         hasSubmittedFeedback = false,
-                        sessionId = newSessionId
+                        sessionId = newSessionId,
+                        assessmentResult = null
                     ) 
                 }
                 loadChatMessages()
@@ -114,6 +115,19 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             }
             is ChatIntent.LoadSession -> {
                 // Not implemented
+            }
+            is ChatIntent.AssessmentCompleted -> {
+                _state.update {
+                    it.copy(
+                        assessmentResult = intent.result,
+                        error = null
+                    )
+                }
+            }
+            is ChatIntent.ClearAssessment -> {
+                _state.update {
+                    it.copy(assessmentResult = null)
+                }
             }
         }
     }
@@ -152,10 +166,13 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 }
                 
                 // Pipeline: Multi-Agent Architecture with Cloud + Local Fallback
+                val assessmentLevel = _state.value.assessmentResult?.level
+                
                 val orchestratorResult = com.aistudio.detected.stress.agents.Orchestrator.analyze(
-                    currentText, 
-                    chatHistory,
-                    deviceId
+                    text = currentText, 
+                    history = chatHistory,
+                    deviceId = deviceId,
+                    assessmentLevel = assessmentLevel
                 )
                 
                 // Formulate response
