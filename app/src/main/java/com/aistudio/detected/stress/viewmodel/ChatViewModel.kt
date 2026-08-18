@@ -149,8 +149,11 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     search_keywords = orchestratorResult.searchKeywords
                 )
                 
-                // Encode category and keywords
-                val keywordStr = if(orchestratorResult.searchKeywords.isNotEmpty()) orchestratorResult.searchKeywords.joinToString(",") else ""
+                // Encode category and direct video links (Title~Url)
+                val videoLinks = orchestratorResult.adviceList.filter { it.videoUrl != null }.map { "${it.title}~${it.videoUrl}" }
+                // Fallback to regular keywords if no videos are found
+                val finalKeywords = if (videoLinks.isNotEmpty()) videoLinks else orchestratorResult.searchKeywords
+                val keywordStr = if(finalKeywords.isNotEmpty()) finalKeywords.joinToString(",") else ""
                 val contentWithKeywords = "${orchestratorResult.empathyMessage}|||${orchestratorResult.category}|||$keywordStr"
                 
                 withContext(Dispatchers.IO) {
