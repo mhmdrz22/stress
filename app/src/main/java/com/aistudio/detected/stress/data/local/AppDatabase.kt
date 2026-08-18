@@ -16,7 +16,7 @@ import java.util.UUID
         ChatMessage::class,
         StressAssessmentEntry::class
     ], 
-    version = 6, 
+    version = 7, 
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -50,11 +50,28 @@ abstract class AppDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
                     """
+                    CREATE TABLE IF NOT EXISTS stress_assessments (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        completedAtEpochMillis INTEGER NOT NULL,
+                        totalScore INTEGER NOT NULL,
+                        maxScore INTEGER NOT NULL,
+                        level TEXT NOT NULL,
+                        assessmentVersion TEXT NOT NULL
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
+
+        private val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
                     CREATE TABLE IF NOT EXISTS `advice_feedback_new` (
-                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
                         `adviceId` TEXT NOT NULL, 
                         `isLiked` INTEGER NOT NULL, 
-                        `timestamp` INTEGER NOT NULL
+                        `timestamp` INTEGER NOT NULL,
+                        PRIMARY KEY(`adviceId`)
                     )
                     """.trimIndent()
                 )
@@ -90,7 +107,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "mood_database"
                 )
-                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6)
+                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                     .openHelperFactory(factory)
                     .build()
                 
