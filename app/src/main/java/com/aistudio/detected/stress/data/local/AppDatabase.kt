@@ -16,7 +16,7 @@ import java.util.UUID
         ChatMessage::class,
         StressAssessmentEntry::class
     ], 
-    version = 5, 
+    version = 6, 
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -43,6 +43,23 @@ abstract class AppDatabase : RoomDatabase() {
                     )
                     """.trimIndent()
                 )
+            }
+        }
+
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `advice_feedback_new` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        `adviceId` TEXT NOT NULL, 
+                        `isLiked` INTEGER NOT NULL, 
+                        `timestamp` INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("DROP TABLE IF EXISTS `advice_feedback`")
+                db.execSQL("ALTER TABLE `advice_feedback_new` RENAME TO `advice_feedback`")
             }
         }
 
@@ -73,7 +90,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "mood_database"
                 )
-                    .addMigrations(MIGRATION_4_5)
+                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6)
                     .openHelperFactory(factory)
                     .build()
                 

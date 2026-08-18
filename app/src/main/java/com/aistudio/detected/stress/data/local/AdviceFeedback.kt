@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "advice_feedback")
 data class AdviceFeedback(
     @PrimaryKey
-    val adviceTitle: String,
+    val adviceId: String,
     val isLiked: Boolean,
     val timestamp: Long
 )

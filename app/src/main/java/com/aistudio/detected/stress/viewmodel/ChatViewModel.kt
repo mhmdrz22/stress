@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -110,7 +111,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     try {
                         adviceFeedbackDao.insertFeedback(
                             AdviceFeedback(
-                                adviceTitle = intent.adviceTitle,
+                                adviceId = intent.adviceId,
                                 isLiked = intent.isLiked ?: false,
                                 timestamp = System.currentTimeMillis()
                             )
@@ -257,11 +258,16 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 // Pipeline: Multi-Agent Architecture with Cloud + Local Fallback
                 val assessmentLevel = _state.value.assessmentResult?.level
                 
+                val likedIds = withContext(Dispatchers.IO) {
+                    adviceFeedbackDao.getLikedAdviceIds().first()
+                }
+                
                 val orchestratorResult = com.aistudio.detected.stress.agents.Orchestrator.analyze(
                     text = currentText, 
                     history = chatHistory,
                     deviceId = deviceId,
-                    assessmentLevel = assessmentLevel
+                    assessmentLevel = assessmentLevel,
+                    likedIds = likedIds.toSet()
                 )
                 
                 // Formulate response
@@ -277,7 +283,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 // Fallback to regular keywords if no videos are found
                 val finalKeywords = if (videoLinks.isNotEmpty()) videoLinks else orchestratorResult.searchKeywords
                 val keywordStr = if(finalKeywords.isNotEmpty()) finalKeywords.joinToString(",") else ""
-                val contentWithKeywords = "${orchestratorResult.empathyMessage}|||${orchestratorResult.category}|||$keywordStr"
+                val adviceIdsStr = orchestratorResult.adviceList.joinToString(",") { it.id }
+                val contentWithKeywords = "${orchestratorResult.empathyMessage}|||${orchestratorResult.category}|||$keywordStr|||$adviceIdsStr"
                 
                 if (mayPersistChat && !orchestratorResult.isCrisis) {
                     withContext(Dispatchers.IO) {

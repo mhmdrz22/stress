@@ -24,7 +24,7 @@ sealed class ChatIntent {
     object SubmitAnalysis : ChatIntent()
     object ClearResult : ChatIntent()
     data class SubmitFeedback(val isCorrect: Boolean) : ChatIntent()
-    data class ToggleLike(val adviceTitle: String, val isLiked: Boolean?) : ChatIntent()
+    data class ToggleLike(val adviceId: String, val isLiked: Boolean?) : ChatIntent()
     object LoadSession : ChatIntent()
     data class AssessmentCompleted(val result: StressAssessmentResult) : ChatIntent()
     object ClearAssessment : ChatIntent()

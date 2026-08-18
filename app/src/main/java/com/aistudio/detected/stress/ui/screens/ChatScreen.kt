@@ -294,7 +294,8 @@ fun ChatScreen(onNavigateStats: () -> Unit, onNavigateAdmin: () -> Unit = {}, on
 fun BeautifulChatBubble(
     message: ChatMessage, 
     onQuickReply: (String) -> Unit = {},
-    onFeedback: (Boolean) -> Unit = {}
+    onFeedback: (Boolean) -> Unit = {},
+    onAdviceFeedback: (String, Boolean) -> Unit = { _, _ -> }
 ) {
     val isUser = message.sender == "user"
     val parts = message.content.split("|||")
@@ -302,6 +303,7 @@ fun BeautifulChatBubble(
     val category = if (parts.size > 1) parts[1] else "joy"
     val keywords = if (parts.size > 2 && parts[2].isNotBlank()) parts[2].split(",") else emptyList()
     val actualKeywords = if (parts.size == 2) parts[1].split(",") else keywords
+    val adviceIds = if (parts.size > 3 && parts[3].isNotBlank()) parts[3].split(",") else emptyList()
     
     Column(
         modifier = Modifier.fillMaxWidth(),

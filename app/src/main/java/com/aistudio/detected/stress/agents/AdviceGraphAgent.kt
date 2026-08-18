@@ -8,23 +8,22 @@ object AdviceGraphAgent {
     
     fun getAdvice(
         category: String, 
-        likedTitles: List<String> = emptyList(),
+        likedIds: List<String> = emptyList(),
         history: List<ChatMessage> = emptyList()
     ): AdviceGraphResult {
         
-        // Extract already-shown advice from chat history
-        val shownAdvice = history.flatMap { msg ->
-            msg.content.split("|||").flatMap { part ->
-                LocalAdviceGraph.adviceList.map { it.title }.filter { part.contains(it) }
-            }
+        // Extract already-shown advice from chat history metadata (the 4th part if we follow id pattern)
+        val shownAdviceIds = history.flatMap { msg ->
+            val parts = msg.content.split("|||")
+            if (parts.size >= 4) parts[3].split(",") else emptyList()
         }.toSet()
         
         // Get all advice for category
-        val allAdvice = LocalAdviceGraph.getAdviceForCategory(category, likedTitles)
+        val allAdvice = LocalAdviceGraph.getAdviceForCategory(category, likedIds)
         
         // Deduplicate: remove already shown, limit to 4
         val freshAdvice = allAdvice
-            .filter { it.title !in shownAdvice }
+            .filter { it.id !in shownAdviceIds }
             .take(4)
             .ifEmpty { allAdvice.shuffled().take(2) } // If all shown, show random 2
         
