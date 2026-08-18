@@ -27,20 +27,27 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import com.aistudio.detected.stress.data.local.MoodEntry
 import com.aistudio.detected.stress.data.local.ChatMessage
 import com.aistudio.detected.stress.ui.theme.ArameshTheme
 import com.aistudio.detected.stress.viewmodel.ChatViewModel
+import com.aistudio.detected.stress.viewmodel.ChatIntent
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardScreen(onBack: () -> Unit, viewModel: ChatViewModel = viewModel()) {
+fun DashboardScreen(
+    onBack: () -> Unit,
+    viewModel: ChatViewModel
+) {
     val history by viewModel.moodHistory.collectAsState()
     val allMessages by viewModel.allChatMessages.collectAsState()
+    val chatState by viewModel.state.collectAsState()
+    val assessmentHistory by viewModel.assessmentHistory.collectAsState()
     
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Scaffold(
@@ -96,6 +103,129 @@ fun DashboardScreen(onBack: () -> Unit, viewModel: ChatViewModel = viewModel()) 
                 history.forEach { entry ->
                     HistoryItem(entry)
                     Spacer(modifier = Modifier.height(12.dp))
+                }
+
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color.White
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "حریم خصوصی گفتگو",
+                            style = ArameshTheme.typography.title.copy(fontSize = 18.sp),
+                            color = ArameshTheme.colors.primaryText
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "ذخیرهٔ تاریخچهٔ گفتگو",
+                                    fontWeight = FontWeight.Bold,
+                                    color = ArameshTheme.colors.primaryText
+                                )
+
+                                Text(
+                                    text = "در حالت فعال، فقط گفتگوهای عادی روی دستگاه ذخیره میشوند. پیامهای بحران و بررسی ایمنی ذخیره نمیشوند.",
+                                    style = ArameshTheme.typography.body,
+                                    color = ArameshTheme.colors.secondaryText
+                                )
+                            }
+
+                            Switch(
+                                checked = chatState.isChatHistoryEnabled,
+                                onCheckedChange = { enabled ->
+                                    viewModel.processIntent(
+                                        ChatIntent.SetChatHistoryEnabled(enabled)
+                                    )
+                                },
+                                colors = SwitchDefaults.colors()
+                            )
+                        }
+
+                        if (chatState.isChatHistoryEnabled) {
+                            Button(
+                                onClick = {
+                                    viewModel.processIntent(ChatIntent.ClearChatHistory)
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 12.dp)
+                            ) {
+                                Text("پاک کردن تاریخچهٔ گفتگو")
+                            }
+                        }
+                    }
+                }
+
+                if (assessmentHistory.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Text(
+                        text = "تاریخچهٔ بررسی استرس",
+                        style = ArameshTheme.typography.title.copy(fontSize = 18.sp),
+                        color = ArameshTheme.colors.primaryText
+                    )
+
+                    assessmentHistory.forEach { assessment ->
+                        val date = SimpleDateFormat(
+                            "dd MMM، HH:mm",
+                            Locale("fa", "IR")
+                        ).format(Date(assessment.completedAtEpochMillis))
+
+                        val levelLabel = when (assessment.level) {
+                            "LOW" -> "پایین"
+                            "MODERATE" -> "متوسط"
+                            "HIGH" -> "بالا"
+                            else -> "ثبتشده"
+                        }
+
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            color = Color.White
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text(
+                                    text = "سطح استرس: $levelLabel",
+                                    fontWeight = FontWeight.Bold,
+                                    color = ArameshTheme.colors.primaryText
+                                )
+
+                                Text(
+                                    text = "امتیاز: ${assessment.totalScore} از ${assessment.maxScore}",
+                                    color = ArameshTheme.colors.secondaryText
+                                )
+
+                                Text(
+                                    text = date,
+                                    style = ArameshTheme.typography.label,
+                                    color = ArameshTheme.colors.secondaryText
+                                )
+                            }
+                        }
+                    }
+
+                    Button(
+                        onClick = {
+                            viewModel.processIntent(ChatIntent.ClearAssessmentHistory)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp)
+                    ) {
+                        Text("پاک کردن تاریخچهٔ ارزیابی")
+                    }
                 }
                 
                 if (allMessages.isNotEmpty()) {

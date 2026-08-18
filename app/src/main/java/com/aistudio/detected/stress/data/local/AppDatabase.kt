@@ -9,11 +9,21 @@ import androidx.security.crypto.MasterKey
 import net.sqlcipher.database.SupportFactory
 import java.util.UUID
 
-@Database(entities = [MoodEntry::class, AdviceFeedback::class, ChatMessage::class], version = 5, exportSchema = false)
+@Database(
+    entities = [
+        MoodEntry::class, 
+        AdviceFeedback::class, 
+        ChatMessage::class,
+        StressAssessmentEntry::class
+    ], 
+    version = 5, 
+    exportSchema = false
+)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun moodDao(): MoodDao
     abstract fun adviceFeedbackDao(): AdviceFeedbackDao
     abstract fun chatDao(): ChatDao
+    abstract fun stressAssessmentDao(): StressAssessmentDao
 
     companion object {
         @Volatile
@@ -21,11 +31,18 @@ abstract class AppDatabase : RoomDatabase() {
 
         private val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // Remove userInput, add stressScore, stressMaxScore, stressLevel
-                db.execSQL("CREATE TABLE IF NOT EXISTS `mood_entries_new` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `dateMillis` INTEGER NOT NULL, `stressScore` INTEGER, `stressMaxScore` INTEGER, `stressLevel` TEXT, `categoryTag` TEXT NOT NULL, `hasStress` INTEGER NOT NULL, `isPredictionCorrect` INTEGER)")
-                db.execSQL("INSERT INTO `mood_entries_new` (`id`, `dateMillis`, `categoryTag`, `hasStress`, `isPredictionCorrect`) SELECT `id`, `dateMillis`, `categoryTag`, `hasStress`, `isPredictionCorrect` FROM `mood_entries`")
-                db.execSQL("DROP TABLE `mood_entries`")
-                db.execSQL("ALTER TABLE `mood_entries_new` RENAME TO `mood_entries`")
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS stress_assessments (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        completedAtEpochMillis INTEGER NOT NULL,
+                        totalScore INTEGER NOT NULL,
+                        maxScore INTEGER NOT NULL,
+                        level TEXT NOT NULL,
+                        assessmentVersion TEXT NOT NULL
+                    )
+                    """.trimIndent()
+                )
             }
         }
 

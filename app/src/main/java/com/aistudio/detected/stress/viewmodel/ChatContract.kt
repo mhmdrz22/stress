@@ -15,7 +15,8 @@ data class ChatState(
     val hasSubmittedFeedback: Boolean = false,
     val chatMessages: List<ChatMessage> = emptyList(),
     val sessionId: Long = 0L,
-    val assessmentResult: StressAssessmentResult? = null
+    val assessmentResult: StressAssessmentResult? = null,
+    val isChatHistoryEnabled: Boolean = false
 )
 
 sealed class ChatIntent {
@@ -27,4 +28,7 @@ sealed class ChatIntent {
     object LoadSession : ChatIntent()
     data class AssessmentCompleted(val result: StressAssessmentResult) : ChatIntent()
     object ClearAssessment : ChatIntent()
+    object ClearAssessmentHistory : ChatIntent()
+    data class SetChatHistoryEnabled(val enabled: Boolean) : ChatIntent()
+    object ClearChatHistory : ChatIntent()
 }

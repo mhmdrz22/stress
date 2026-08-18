@@ -147,6 +147,56 @@ fun ChatScreen(onNavigateStats: () -> Unit, onNavigateAdmin: () -> Unit = {}, on
                 ) {
                     item { Spacer(modifier = Modifier.height(16.dp)) }
                     
+                    state.assessmentResult?.let { assessment ->
+                        item {
+                            val levelText = when (assessment.level) {
+                                com.aistudio.detected.stress.data.StressLevel.LOW ->
+                                    "سطح بررسیشده: پایین"
+
+                                com.aistudio.detected.stress.data.StressLevel.MODERATE ->
+                                    "سطح بررسیشده: متوسط"
+
+                                com.aistudio.detected.stress.data.StressLevel.HIGH ->
+                                    "سطح بررسیشده: بالا"
+
+                                com.aistudio.detected.stress.data.StressLevel.URGENT ->
+                                    "نیاز به کمک فوری"
+                            }
+
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                color = when (assessment.level) {
+                                    com.aistudio.detected.stress.data.StressLevel.LOW ->
+                                        Color(0xFFE8F5E9)
+
+                                    com.aistudio.detected.stress.data.StressLevel.MODERATE ->
+                                        Color(0xFFFFF8E1)
+
+                                    com.aistudio.detected.stress.data.StressLevel.HIGH,
+                                    com.aistudio.detected.stress.data.StressLevel.URGENT ->
+                                        Color(0xFFFFEBEE)
+                                }
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Text(
+                                        text = levelText,
+                                        fontWeight = FontWeight.Bold,
+                                        color = DarkEarth
+                                    )
+
+                                    Text(
+                                        text = assessment.disclaimer,
+                                        fontSize = 12.sp,
+                                        color = Color.DarkGray
+                                    )
+                                }
+                            }
+                        }
+                    }
+
                     if (state.chatMessages.isEmpty() && !state.isLoading) {
                         item {
                             Column(

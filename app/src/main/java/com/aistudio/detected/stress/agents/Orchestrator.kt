@@ -72,13 +72,31 @@ object Orchestrator {
             )
         )
 
-        return CriticAgent.evaluate(
+        val criticResult = CriticAgent.evaluate(
             perception = perception,
             rag = empathy,
             advice = AdviceGraphResult(
                 adviceList = policyAdvice.adviceList,
                 searchKeywords = policyAdvice.searchKeywords
             )
+        )
+
+        val guardDecision = QualityGuard.validate(
+            AssistantDraft(
+                message = criticResult.empathyMessage,
+                advice = criticResult.adviceList,
+                keywords = criticResult.searchKeywords,
+                category = criticResult.category,
+                confidence = perception.confidence,
+                stressLevel = assessmentLevel,
+                isCrisis = criticResult.isCrisis
+            )
+        )
+
+        return criticResult.copy(
+            empathyMessage = guardDecision.message,
+            adviceList = guardDecision.advice,
+            searchKeywords = guardDecision.keywords
         )
     }
 
