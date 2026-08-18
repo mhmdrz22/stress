@@ -16,6 +16,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.draw.clip
+
 import com.aistudio.detected.stress.ui.theme.ArameshTheme
 import kotlinx.coroutines.delay
 
@@ -69,13 +71,10 @@ fun OnboardingScreen(onNavigateNext: () -> Unit) {
 
 @Composable
 fun ZenLogo() {
-    val leafColor = ArameshTheme.colors.accentGreen
-    val sunColor = ArameshTheme.colors.accentWood
-    
     val infiniteTransition = rememberInfiniteTransition(label = "infinite")
     val breatheAnim by infiniteTransition.animateFloat(
-        initialValue = 0.9f,
-        targetValue = 1.15f,
+        initialValue = 0.95f,
+        targetValue = 1.05f,
         animationSpec = infiniteRepeatable(
             animation = tween(2500, easing = EaseInOutSine),
             repeatMode = RepeatMode.Reverse
@@ -83,50 +82,16 @@ fun ZenLogo() {
         label = "breathe"
     )
 
-    Canvas(modifier = Modifier.size(120.dp)) {
-        val center = Offset(size.width / 2, size.height / 2)
-        
-        // Sun
-        drawCircle(
-            color = sunColor.copy(alpha = 0.6f),
-            radius = 35.dp.toPx() * breatheAnim,
-            center = center.copy(y = center.y - 10.dp.toPx())
-        )
-        
-        // Lotus / Leaves abstract
-        val stroke = Stroke(width = 5.dp.toPx(), cap = StrokeCap.Round)
-        
-        // Center petal
-        drawArc(
-            color = leafColor,
-            startAngle = 225f,
-            sweepAngle = 90f,
-            useCenter = false,
-            topLeft = Offset(center.x - 20.dp.toPx(), center.y - 20.dp.toPx()),
-            size = androidx.compose.ui.geometry.Size(40.dp.toPx(), 40.dp.toPx()),
-            style = stroke
-        )
-        
-        // Left petal
-        drawArc(
-            color = leafColor,
-            startAngle = 180f,
-            sweepAngle = 90f,
-            useCenter = false,
-            topLeft = Offset(center.x - 45.dp.toPx(), center.y),
-            size = androidx.compose.ui.geometry.Size(45.dp.toPx(), 45.dp.toPx()),
-            style = stroke
-        )
-        
-        // Right petal
-        drawArc(
-            color = leafColor,
-            startAngle = 270f,
-            sweepAngle = 90f,
-            useCenter = false,
-            topLeft = Offset(center.x, center.y),
-            size = androidx.compose.ui.geometry.Size(45.dp.toPx(), 45.dp.toPx()),
-            style = stroke
-        )
-    }
+    androidx.compose.foundation.Image(
+        painter = androidx.compose.ui.res.painterResource(id = com.aistudio.detected.stress.R.drawable.aramesh_logo),
+        contentDescription = "Aramesh Logo",
+        modifier = Modifier
+            .size(150.dp)
+            .graphicsLayer {
+                scaleX = breatheAnim
+                scaleY = breatheAnim
+            }
+            .clip(androidx.compose.foundation.shape.CircleShape),
+        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+    )
 }
