@@ -32,16 +32,37 @@ object Orchestrator {
         )
 
         val empathy = LocalRagAgent.retrieveEmpathy(perception)
-        val advice = AdviceGraphAgent.getAdvice(
+        val baseAdvice = AdviceGraphAgent.getAdvice(
             category = perception.category,
             history = history,
             likedTitles = emptyList()
         )
 
+        val shownTitles = history
+            .flatMap { message ->
+                baseAdvice.adviceList
+                    .filter { advice -> message.content.contains(advice.title) }
+                    .map { advice -> advice.title }
+            }
+            .toSet()
+
+        val policyAdvice = AdvicePolicyAgent.select(
+            AdvicePolicyRequest(
+                category = perception.category,
+                stressLevel = null,
+                isCrisis = false,
+                previouslyShownTitles = shownTitles,
+                likedTitles = emptySet()
+            )
+        )
+
         return CriticAgent.evaluate(
             perception = perception,
             rag = empathy,
-            advice = advice
+            advice = AdviceGraphResult(
+                adviceList = policyAdvice.adviceList,
+                searchKeywords = policyAdvice.searchKeywords
+            )
         )
     }
 
